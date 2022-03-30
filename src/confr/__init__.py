@@ -1,3 +1,3 @@
-CONFIGURED = "__CB_CONFIGURED__"
+CONFIGURED = "__CONFR_CONFIGURED__"
 
 from .interface import *
