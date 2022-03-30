@@ -21,14 +21,14 @@ def set(k, v):
 def configured(orig):
     if inspect.isfunction(orig):
         def confr_wrapped_function(*args, **kwargs):
-            overrides = get_call_overrides(orig, args, kwargs)
+            overrides = _get_call_overrides(orig, args, kwargs)
             return orig(*args, **kwargs, **overrides)
 
         return confr_wrapped_function
     else:
         class ConfrWrappedClass(orig):
             def __init__(self, *args, **kwargs):
-                overrides = get_call_overrides(orig, args, kwargs)
+                overrides = _get_call_overrides(orig, args, kwargs)
                 super().__init__(*args, **kwargs, **overrides)
 
         return ConfrWrappedClass
@@ -55,7 +55,7 @@ def conf_from_files(conf_files, overrides=None, verbose=True):
 def conf_from_dir(
     conf_dir=settings.CONF_DIR,
     base_conf=settings.CONF_DIR,
-    conf_patches=None,
+    conf_patches=[],
     overrides=None,
     verbose=True,
     ):
@@ -73,10 +73,10 @@ def conf_from_dir(
     global_conf = Conf(conf_dicts, overrides=overrides, verbose=verbose)
 
 
-def write_conf_file(fp, limit_keys=[]):
+def write_conf_file(fp, except_keys=[]):
     ret = {}
     for k, v in global_conf.to_dict().items():
-        if k not in limit_keys:
+        if k not in except_keys:
             original_val = global_conf.c_original[k]
             if type(original_val) == str and original_val[0] in ["@", "$"]:
                 ret[k] = original_val
@@ -87,7 +87,7 @@ def write_conf_file(fp, limit_keys=[]):
     print(f"Wrote configurations for: {list(ret.keys())}")
 
 
-def get_call_overrides(cls_or_fn, args, kwargs):
+def _get_call_overrides(cls_or_fn, args, kwargs):
     try:
         bound_args = inspect.signature(cls_or_fn).bind(*args, **kwargs)
     except Exception as e:

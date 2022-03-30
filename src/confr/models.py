@@ -44,6 +44,9 @@ class Conf:
         except AssertionError:
             return default
 
+    def set(self, k, v):
+        self.c_original[k] = v
+
     def __getitem__(self, k):
         for overrides_dict in self.overrides_dicts.get()[::-1]:
             if k in overrides_dict:
