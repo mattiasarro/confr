@@ -18,7 +18,7 @@ def set(k, v):
     return global_conf.set(k, v)
 
 
-def configured(orig):
+def bind(orig):
     if inspect.isfunction(orig):
         def confr_wrapped_function(*args, **kwargs):
             overrides = _get_call_overrides(orig, args, kwargs)

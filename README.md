@@ -28,11 +28,11 @@ And in some Python program you can do the following:
 import confr
 confr.conf_from_files(["/path/to/project/config/_base.yaml"])
 
-@confr.configured
+@confr.bind
 def my_function(a, my_config_key1=confr.CONFIGURED):
     return a, my_config_key1
 
-@confr.configured
+@confr.bind
 class MyClass:
     def __init__(self, a, my_config_key1=confr.CONFIGURED):
         self.a = a
@@ -41,7 +41,7 @@ class MyClass:
     def my_method1(self):
         return self.a, self.my_config_key1
 
-    @confr.configured
+    @confr.bind
     def my_method2(self, my_config_key2=confr.CONFIGURED):
         return self.a, self.my_config_key1, my_config_key2
 
@@ -73,17 +73,17 @@ confr.conf_from_dir(
 )
 ```
 
-Once `confr.conf_from_*()` is called, confr ensures that for all functions and classes decorated with `@confr.configured`, which have keyword arguments with default values `confr.CONFIGURED`, will at runtime have those default values replaced with values from the global config object initialised with `confr.conf_from_*`.
+Once `confr.conf_from_*()` is called, confr ensures that for all functions and classes decorated with `@confr.bind`, which have keyword arguments with default values `confr.CONFIGURED`, will at runtime have those default values replaced with values from the global config object initialised with `confr.conf_from_*`.
 
 We have three cases:
 
-1. Classes decorated with `@confr.configured`. The `__init__` method can have keyword arguments with `confr.CONFIGURED` default values (e.g. `MyClass.__init__` above).
-1. Class instance methods decorated with `confr.configured`. The class instance method can have keyword arguments with `confr.CONFIGURED` default values (e.g. `MyClass.my_method1` above).
-1. Regular functions decorated with `confr.configured`. The function can have keyword arguments with `confr.CONFIGURED` default values (e.g. `my_function` above).
+1. Classes decorated with `@confr.bind`. The `__init__` method can have keyword arguments with `confr.CONFIGURED` default values (e.g. `MyClass.__init__` above).
+1. Class instance methods decorated with `confr.bind`. The class instance method can have keyword arguments with `confr.CONFIGURED` default values (e.g. `MyClass.my_method1` above).
+1. Regular functions decorated with `confr.bind`. The function can have keyword arguments with `confr.CONFIGURED` default values (e.g. `my_function` above).
 
 Please bear in mind the following:
 
-* If you forget to decorate the class/function with `confr.configured` but set the keyword argument's default value as `confr.CONFIGURED`, the actual runtime value will be `"__CONFR_CONFIGURED__"`, which is not what you want. That's because `confr.CONFIGURED` is actually a constant that has the value `"__CONFR_CONFIGURED__"`, and unless you decorate your class/function with `confr.configured`, confr has no way to replace those values with ones in your config file(s).
+* If you forget to decorate the class/function with `confr.bind` but set the keyword argument's default value as `confr.CONFIGURED`, the actual runtime value will be `"__CONFR_CONFIGURED__"`, which is not what you want. That's because `confr.CONFIGURED` is actually a constant that has the value `"__CONFR_CONFIGURED__"`, and unless you decorate your class/function with `confr.bind`, confr has no way to replace those values with ones in your config file(s).
 * Even if you specify a keyword argument whose default value is `confr.CONFIGURED`, you can always override it by calling the function / class initializer with the keyword value assigned. Be careful when doing this, however. We often make arguments `confr.CONFIGURED` if we expect the value of the argument to always come from a config file (rather than being hardcoded from the calling function). Passing the value explicitly breaks this expectation, and can lead to confusing results. For example, say you implement `function1`, which calls `function2(img_h=96)`, which works fine for your current set of hyperparameters (because your `_base.yaml` also states `img_h=96`). But if someone else reuses the code and sets `img_h=192` in `_base.yaml`, then `function1` will probably cause the program to fail, because `function2` is called with `img_h=96` while everywhere else `img_h=192`. There are legitimate cases when you would need to modify the global configuration of some keywords, though - see the section `"confr.modified_conf"` below for more details.
 
 ## Python references and singletons
@@ -91,7 +91,7 @@ Please bear in mind the following:
 A value in `_base.yaml` can be a of the form `"@module1.module2.object_class_or_function"` (strings starting with a `@`). Such values (which we call **Python references**) will effectively be imported by confr and passed as regular python objects. For example, if `_base.yaml` contains `aug_fn: "@my_module.augmentors.aug_standard"`, we could do the following:
 
 ```python
-confr.configured
+confr.bind
 def my_preprocessing(x, aug_fn=confr.CONFIGURED):
     # aug_fn is a Python callable
     x_augmented = aug_fn(x)
@@ -119,11 +119,11 @@ models_by_name:
 **Python example 1**
 
 ```python
-@confr.configured
+@confr.bind
 def get_my_model1(my_model=confr.CONFIGURED):
     return my_model
 
-@confr.configured
+@confr.bind
 def get_my_model2(my_model=confr.CONFIGURED):
     return my_model
 
@@ -135,11 +135,11 @@ assert my_model1 == my_model2 # my_model1 and my_model2 are the same object
 **Python example 2**
 
 ```python
-@confr.configured
+@confr.bind
 def get_all_models(all_models=confr.CONFIGURED):
     return all_models
 
-@confr.configured
+@confr.bind
 def get_models_by_name(models_by_name=confr.CONFIGURED):
     return models_by_name
 

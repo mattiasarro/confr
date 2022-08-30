@@ -6,21 +6,21 @@ import confr
 from confr.utils import read_yaml
 
 
-@confr.configured
+@confr.bind
 def myfn(key1=confr.CONFIGURED):
     return key1
 
 
-@confr.configured
+@confr.bind
 class MyClass:
     def __init__(self, key1=confr.CONFIGURED):
         self.key1 = key1
 
-    @confr.configured
+    @confr.bind
     def my_method1(self, key1=None, key2=confr.CONFIGURED):
         return self.key1, key1, key2
 
-    # notice this method is not annotated with @confr.configured
+    # notice this method is not annotated with @confr.bind
     def my_method2(self, key1=None, key2=confr.CONFIGURED):
         return self.key1, key1, key2
 
@@ -33,13 +33,13 @@ def test_conf_get_set():
     assert confr.get("key1") == myfn() == "val2"
 
 
-def test_configured_fn():
+def test_bind_fn():
     confr.conf_from_dict({"key1": "val1"})
     assert myfn() == "val1"
     assert myfn(key1="val2") == "val2"
 
 
-def test_configured_class():
+def test_bind_class():
     confr.conf_from_dict({"key1": "val1", "key2": "val2"})
 
     o = MyClass(key1="val1")
@@ -124,8 +124,8 @@ def test_write_conf_file():
 
 
 # test_conf_get_set()
-# test_configured_fn()
-# test_configured_class()
+# test_bind_fn()
+# test_bind_class()
 # test_modified_conf()
 # test_conf_from_files()
 # test_conf_from_dir()
