@@ -7,27 +7,27 @@ from confr.utils import read_yaml
 
 
 @confr.bind
-def myfn(key1=confr.CONFIGURED):
+def myfn(key1=confr.value):
     return key1
 
 
 @confr.bind
 class MyClass:
-    def __init__(self, key1=confr.CONFIGURED):
+    def __init__(self, key1=confr.value):
         self.key1 = key1
 
     @confr.bind
-    def my_method1(self, key1=None, key2=confr.CONFIGURED):
+    def my_method1(self, key1=None, key2=confr.value):
         return self.key1, key1, key2
 
     # notice this method is not annotated with @confr.bind
-    def my_method2(self, key1=None, key2=confr.CONFIGURED):
+    def my_method2(self, key1=None, key2=confr.value):
         return self.key1, key1, key2
 
 
 def test_conf_get_set():
     confr.init(conf={"key1": "val1"})
-    assert confr.get("key1") == myfn() == "val1"
+    assert confr.get("key1") == myfn() == "val1", (myfn(), type(myfn()))
 
     confr.set("key1", "val2")
     assert confr.get("key1") == myfn() == "val2"
@@ -45,10 +45,10 @@ def test_bind_class():
     o = MyClass(key1="val1")
     assert o.key1 == "val1"
     assert o.my_method1() == ("val1", None, "val2")
-    assert o.my_method2() == ("val1", None, confr.CONFIGURED)
+    assert o.my_method2() == ("val1", None, confr.value)
 
     assert o.my_method1(key1="a") == ("val1", "a", "val2")
-    assert o.my_method2(key1="a") == ("val1", "a", confr.CONFIGURED)
+    assert o.my_method2(key1="a") == ("val1", "a", confr.value)
     assert o.my_method1(key1="a", key2="b") == ("val1", "a", "b")
     assert o.my_method2(key1="a", key2="b") == ("val1", "a", "b")
 

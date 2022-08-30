@@ -4,7 +4,6 @@ import inspect
 from confr import settings
 from confr.utils import write_yaml, report_conf_init, read_yaml
 from confr.models import Conf, ModifiedConf
-from confr import CONFIGURED
 
 
 global_conf = None # global config object which will hold an instance of Conf
@@ -34,8 +33,8 @@ def bind(orig):
         return ConfrWrappedClass
 
 
-def modified_conf(**kwargs):
-    return ModifiedConf(global_conf, **kwargs)
+def value():
+    pass
 
 
 def init(
@@ -74,6 +73,10 @@ def init(
         global_conf = Conf(conf_dicts, overrides=overrides, verbose=verbose)
 
 
+def modified_conf(**kwargs):
+    return ModifiedConf(global_conf, **kwargs)
+
+
 def write_conf_file(fp, except_keys=[]):
     ret = {}
     for k, v in global_conf.to_dict().items():
@@ -101,7 +104,7 @@ def _get_call_overrides(cls_or_fn, args, kwargs):
         return {
             k: global_conf[k]
             for k, v in default_args.items()
-            if type(v) == str and v == CONFIGURED
+            if callable(v) and v == value # TODO handle output of value
         }
     except:
         print(f"Trying to assign configurations to {cls_or_fn.__name__}")

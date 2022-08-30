@@ -29,12 +29,12 @@ import confr
 confr.init(conf_files=["/path/to/project/config/_base.yaml"])
 
 @confr.bind
-def my_function(a, my_config_key1=confr.CONFIGURED):
+def my_function(a, my_config_key1=confr.value):
     return a, my_config_key1
 
 @confr.bind
 class MyClass:
-    def __init__(self, a, my_config_key1=confr.CONFIGURED):
+    def __init__(self, a, my_config_key1=confr.value):
         self.a = a
         self.my_config_key1 = my_config_key1
 
@@ -42,7 +42,7 @@ class MyClass:
         return self.a, self.my_config_key1
 
     @confr.bind
-    def my_method2(self, my_config_key2=confr.CONFIGURED):
+    def my_method2(self, my_config_key2=confr.value):
         return self.a, self.my_config_key1, my_config_key2
 
 my_function("foo") # returns ("foo", "value 1")
@@ -73,18 +73,18 @@ confr.init(
 )
 ```
 
-Once `confr.init()` is called, confr ensures that for all functions and classes decorated with `@confr.bind`, which have keyword arguments with default values `confr.CONFIGURED`, will at runtime have those default values replaced with values from the global config object initialised with `confr.init`.
+Once `confr.init()` is called, confr ensures that for all functions and classes decorated with `@confr.bind`, which have keyword arguments with default values `confr.value`, will at runtime have those default values replaced with values from the global config object initialised with `confr.init`.
 
 We have three cases:
 
-1. Classes decorated with `@confr.bind`. The `__init__` method can have keyword arguments with `confr.CONFIGURED` default values (e.g. `MyClass.__init__` above).
-1. Class instance methods decorated with `confr.bind`. The class instance method can have keyword arguments with `confr.CONFIGURED` default values (e.g. `MyClass.my_method1` above).
-1. Regular functions decorated with `confr.bind`. The function can have keyword arguments with `confr.CONFIGURED` default values (e.g. `my_function` above).
+1. Classes decorated with `@confr.bind`. The `__init__` method can have keyword arguments with `confr.value` default values (e.g. `MyClass.__init__` above).
+1. Class instance methods decorated with `confr.bind`. The class instance method can have keyword arguments with `confr.value` default values (e.g. `MyClass.my_method1` above).
+1. Regular functions decorated with `confr.bind`. The function can have keyword arguments with `confr.value` default values (e.g. `my_function` above).
 
 Please bear in mind the following:
 
-* If you forget to decorate the class/function with `confr.bind` but set the keyword argument's default value as `confr.CONFIGURED`, the actual runtime value will be `"__CONFR_CONFIGURED__"`, which is not what you want. That's because `confr.CONFIGURED` is actually a constant that has the value `"__CONFR_CONFIGURED__"`, and unless you decorate your class/function with `confr.bind`, confr has no way to replace those values with ones in your config file(s).
-* Even if you specify a keyword argument whose default value is `confr.CONFIGURED`, you can always override it by calling the function / class initializer with the keyword value assigned. Be careful when doing this, however. We often make arguments `confr.CONFIGURED` if we expect the value of the argument to always come from a config file (rather than being hardcoded from the calling function). Passing the value explicitly breaks this expectation, and can lead to confusing results. For example, say you implement `function1`, which calls `function2(img_h=96)`, which works fine for your current set of hyperparameters (because your `_base.yaml` also states `img_h=96`). But if someone else reuses the code and sets `img_h=192` in `_base.yaml`, then `function1` will probably cause the program to fail, because `function2` is called with `img_h=96` while everywhere else `img_h=192`. There are legitimate cases when you would need to modify the global configuration of some keywords, though - see the section `"confr.modified_conf"` below for more details.
+* If you forget to decorate the class/function with `confr.bind` but set the keyword argument's default value as `confr.value`, the actual runtime value will be `"__CONFR_value__"`, which is not what you want. That's because `confr.value` is actually a constant that has the value `"__CONFR_value__"`, and unless you decorate your class/function with `confr.bind`, confr has no way to replace those values with ones in your config file(s).
+* Even if you specify a keyword argument whose default value is `confr.value`, you can always override it by calling the function / class initializer with the keyword value assigned. Be careful when doing this, however. We often make arguments `confr.value` if we expect the value of the argument to always come from a config file (rather than being hardcoded from the calling function). Passing the value explicitly breaks this expectation, and can lead to confusing results. For example, say you implement `function1`, which calls `function2(img_h=96)`, which works fine for your current set of hyperparameters (because your `_base.yaml` also states `img_h=96`). But if someone else reuses the code and sets `img_h=192` in `_base.yaml`, then `function1` will probably cause the program to fail, because `function2` is called with `img_h=96` while everywhere else `img_h=192`. There are legitimate cases when you would need to modify the global configuration of some keywords, though - see the section `"confr.modified_conf"` below for more details.
 
 ## Python references and singletons
 
@@ -92,7 +92,7 @@ A value in `_base.yaml` can be a of the form `"@module1.module2.object_class_or_
 
 ```python
 confr.bind
-def my_preprocessing(x, aug_fn=confr.CONFIGURED):
+def my_preprocessing(x, aug_fn=confr.value):
     # aug_fn is a Python callable
     x_augmented = aug_fn(x)
 ```
@@ -101,7 +101,7 @@ A value in `_base.yaml` can also be a of the form `"@module1.module2.class_or_fu
 
 Initializable Python references have two types.
 
-1. **singletons** - If `_base.yaml` defines a top-level config key (such as `my_model` in the `_base.yaml example` below), the value returned by calling the initializable Python reference is memoized (cached). Now this cached value is reused in all the places where we've defined `my_model=confr.CONFIGURED`. See `Python example 1` below.
+1. **singletons** - If `_base.yaml` defines a top-level config key (such as `my_model` in the `_base.yaml example` below), the value returned by calling the initializable Python reference is memoized (cached). Now this cached value is reused in all the places where we've defined `my_model=confr.value`. See `Python example 1` below.
 2. **non-singletons** - For all other occurences of initializable Python references in config files, such as in lists or non-root config keys (e.g. in `all_models` and `models_by_name` in `_base.yaml example` below), the values get re-initialized every time they re-occur. See `Python example 2` below. **Make sure that you don't needlessly create many non-singleton Python references that take a long time to initialize or take a lot of memory, such as TensorFlow models.**
 
 **_base.yaml example - do not do this!**
@@ -120,11 +120,11 @@ models_by_name:
 
 ```python
 @confr.bind
-def get_my_model1(my_model=confr.CONFIGURED):
+def get_my_model1(my_model=confr.value):
     return my_model
 
 @confr.bind
-def get_my_model2(my_model=confr.CONFIGURED):
+def get_my_model2(my_model=confr.value):
     return my_model
 
 my_model1 = get_my_model1() # my_model gets initialized here and memoized (cached in memory)
@@ -136,11 +136,11 @@ assert my_model1 == my_model2 # my_model1 and my_model2 are the same object
 
 ```python
 @confr.bind
-def get_all_models(all_models=confr.CONFIGURED):
+def get_all_models(all_models=confr.value):
     return all_models
 
 @confr.bind
-def get_models_by_name(models_by_name=confr.CONFIGURED):
+def get_models_by_name(models_by_name=confr.value):
     return models_by_name
 
 all_models = get_all_models() # model1 gets inititalized twice
@@ -163,7 +163,7 @@ my_model2/location: "/path/to/some/other/weights.h5"
 
 Now `my_model1` singleton will be initialized with `location="/path/to/weights.h5"` and `my_model2` singleton will be initialized with `location="/path/to/some/other/weights.h5"`. This way they can both define an input argument called `location` and still receive a unique value at initialization time. We call `my_model1/location` as a **scoped argument**, i.e. the value of `location` is present in only the `my_model1` singleton scope.
 
-Note that you can still use the regular, non-scoped arguments along with scoped ones. For example, both `my_model1` and `my_model2` might define `img_h=confr.CONFIGURED`, and this value will be the same when initializing both singletons.
+Note that you can still use the regular, non-scoped arguments along with scoped ones. For example, both `my_model1` and `my_model2` might define `img_h=confr.value`, and this value will be the same when initializing both singletons.
 
 ## References to singletons
 
@@ -211,7 +211,7 @@ for p_thresh in p_thresholds:
     precision = calculate_precision(x, y, p_thresh=p_thresh)
 ```
 
-This would work if `calculate_precision` is the only place that uses the `p_thresh` that's passed in. But if `calculate_precision` calls another function that defines `sub_function(p_thresh=confr.CONFIGURED)`, then the value of `p_thresh` will be the same as in `_base.yaml` and not the one we passed to `calculate_precision`. What we need here is to temporarily set the value of `p_thresh` config key in the whole confr, like this:
+This would work if `calculate_precision` is the only place that uses the `p_thresh` that's passed in. But if `calculate_precision` calls another function that defines `sub_function(p_thresh=confr.value)`, then the value of `p_thresh` will be the same as in `_base.yaml` and not the one we passed to `calculate_precision`. What we need here is to temporarily set the value of `p_thresh` config key in the whole confr, like this:
 
 ```python
 for p_thresh in p_thresholds:
