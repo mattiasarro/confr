@@ -39,6 +39,7 @@ class Conf:
             self.c_original[k] = v
 
     def get(self, k, default=None):
+        # TODO handle dot notation for nested keys
         try:
             return self[k]
         except AssertionError:

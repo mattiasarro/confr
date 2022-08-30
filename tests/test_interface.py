@@ -12,6 +12,21 @@ def myfn(key1=confr.value):
 
 
 @confr.bind
+def fn_custom_key(key1=confr.value("key2")):
+    return key1
+
+
+@confr.bind
+def fn_default(key1=confr.value(default="default")):
+    return key1
+
+
+@confr.bind
+def fn_custom_key_and_default(key1=confr.value("key2", default="default")):
+    return key1
+
+
+@confr.bind
 class MyClass:
     def __init__(self, key1=confr.value):
         self.key1 = key1
@@ -37,6 +52,32 @@ def test_bind_fn():
     confr.init(conf={"key1": "val1"})
     assert myfn() == "val1"
     assert myfn(key1="val2") == "val2"
+
+
+def test_custom_key():
+    confr.init(conf={"key1": "val1", "key2": "val2"})
+    assert fn_custom_key() == "val2"
+    assert fn_custom_key(key1="val3") == "val3"
+
+
+def test_default():
+    confr.init(conf={"other_key": "other_val"}) # ensure we init from dict, rather than dir
+    assert fn_default() == "default"
+
+    confr.init(conf={"key1": "val1"})
+    assert fn_default() == "val1"
+
+
+def test_custom_key_and_default():
+    confr.init(conf={"key1": "val1", "key2": "val2"})
+    assert fn_custom_key_and_default() == "val2"
+    assert fn_custom_key_and_default(key1="val3") == "val3"
+
+    confr.init(conf={"other_key": "other_val"}) # ensure we init from dict, rather than dir
+    assert fn_custom_key_and_default() == "default"
+
+    confr.init(conf={"key2": "val2"})
+    assert fn_custom_key_and_default() == "val2"
 
 
 def test_bind_class():

@@ -4,9 +4,11 @@ import inspect
 from confr import settings
 from confr.utils import write_yaml, report_conf_init, read_yaml
 from confr.models import Conf, ModifiedConf
+from collections import namedtuple
 
 
 global_conf = None # global config object which will hold an instance of Conf
+Value = namedtuple("Value", ["key", "default"])
 
 
 def get(k, default=None):
@@ -33,8 +35,8 @@ def bind(orig):
         return ConfrWrappedClass
 
 
-def value():
-    pass
+def value(key=None, default=None):
+    return Value(key, default)
 
 
 def init(
@@ -101,11 +103,16 @@ def _get_call_overrides(cls_or_fn, args, kwargs):
 
     assert global_conf is not None, "Need to initialize config before executing configurable functions."
     try:
-        return {
-            k: global_conf[k]
-            for k, v in default_args.items()
-            if callable(v) and v == value # TODO handle output of value
-        }
+        ret = {}
+        for k, v in default_args.items():
+            if callable(v) and v == value:
+                ret[k] = global_conf[k]
+            elif isinstance(v, Value):
+                if v.key is None:
+                    ret[k] = global_conf.get(k, v.default)
+                else:
+                    ret[k] = global_conf.get(v.key, v.default)
+        return ret
     except:
         print(f"Trying to assign configurations to {cls_or_fn.__name__}")
         raise
