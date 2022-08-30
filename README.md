@@ -26,7 +26,7 @@ And in some Python program you can do the following:
 
 ```python
 import confr
-confr.conf_from_files(["/path/to/project/config/_base.yaml"])
+confr.init(conf_files=["/path/to/project/config/_base.yaml"])
 
 @confr.bind
 def my_function(a, my_config_key1=confr.CONFIGURED):
@@ -58,22 +58,22 @@ obj.my_method2(my_config_key2="override") # returns ("bar", "value 1", "override
 
 We have three ways to initialise a configuration:
 
-1. `confr.conf_from_files` - explicitly pass absolute paths (used e.g. in the inference server).
-2. `confr.conf_from_dict` - explicitly pass config key-value pairs as dict (useful e.g. in unit/integration tests).
-3. `confr.conf_from_dict` - by default, loads the base conf file `config/_base.yaml`, which is where the config file is located anyway. You can also pass a list of "conf patches", e.g. `test`, `model1`, `model2`; each conf patch's file is also loaded (e.g. from `config/test.yaml`), which can override some of the base conf's values.
+1. `confr.init(conf_files=["/path/to/conf.yaml"])` - explicitly pass absolute paths (used e.g. in the inference server).
+2. `confr.init(conf={"k": "v"})` - explicitly pass config key-value pairs as dict (useful e.g. in unit/integration tests).
+3. `confr.init()` - by default, loads the base conf file `config/_base.yaml`, which is where the config file is located anyway. You can also pass a list of "conf patches", e.g. `test`, `model1`, `model2`; each conf patch's file is also loaded (e.g. from `config/test.yaml`), which can override some of the base conf's values.
 
 Below is a typical example of how to initialise a configuration. The below code first loads `config/_base.yaml`, then `config/model1.yaml`, and then overwrites the `learning_rate` config key to be `0.01` in the current active configuration.
 
 ```python
 import confr
 
-confr.conf_from_dir(
+confr.init(
     conf_patches=["model1"],
     overrides={"learning_rate": 0.01},
 )
 ```
 
-Once `confr.conf_from_*()` is called, confr ensures that for all functions and classes decorated with `@confr.bind`, which have keyword arguments with default values `confr.CONFIGURED`, will at runtime have those default values replaced with values from the global config object initialised with `confr.conf_from_*`.
+Once `confr.init()` is called, confr ensures that for all functions and classes decorated with `@confr.bind`, which have keyword arguments with default values `confr.CONFIGURED`, will at runtime have those default values replaced with values from the global config object initialised with `confr.init`.
 
 We have three cases:
 
@@ -198,7 +198,7 @@ Notice that we've changed the name of our embedding model singleton from `my_emb
 When working in a notebook, you may not want to modify the yaml file to change the configuration. You could instead initialize the configuration by selectively providing overrides to the keys you care about like this:
 
 ```python
-confr.conf_from_dir(overrides={"override_key1": "v1", "override_key2": "v2"})
+confr.init(overrides={"override_key1": "v1", "override_key2": "v2"})
 ```
 
 Here, all configurations will be taken from `_base.yaml`, and the keys `override_key1` and `override_key2` would respectively have values `"v1"` and `"v2"`.
@@ -227,7 +227,7 @@ Sometimes we need to explicitly fetch the value of a key in our config system. Y
 ```python
 import confr
 
-confr.conf_from_dict({"key1": "val1"})
+confr.init(conf={"key1": "val1"})
 
 confr.get("key1") # returns "val1"
 confr.set("key1", "overwritten")

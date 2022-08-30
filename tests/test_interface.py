@@ -26,7 +26,7 @@ class MyClass:
 
 
 def test_conf_get_set():
-    confr.conf_from_dict({"key1": "val1"})
+    confr.init(conf={"key1": "val1"})
     assert confr.get("key1") == myfn() == "val1"
 
     confr.set("key1", "val2")
@@ -34,13 +34,13 @@ def test_conf_get_set():
 
 
 def test_bind_fn():
-    confr.conf_from_dict({"key1": "val1"})
+    confr.init(conf={"key1": "val1"})
     assert myfn() == "val1"
     assert myfn(key1="val2") == "val2"
 
 
 def test_bind_class():
-    confr.conf_from_dict({"key1": "val1", "key2": "val2"})
+    confr.init(conf={"key1": "val1", "key2": "val2"})
 
     o = MyClass(key1="val1")
     assert o.key1 == "val1"
@@ -54,7 +54,7 @@ def test_bind_class():
 
 
 def test_modified_conf():
-    confr.conf_from_dict({"key1": "val1"})
+    confr.init(conf={"key1": "val1"})
     assert myfn() == "val1"
     with confr.modified_conf(key1="val2"):
         assert myfn() == "val2"
@@ -66,7 +66,7 @@ def test_conf_from_files():
         f.write("key1: val1".encode("utf-8"))
         f.flush()
 
-        confr.conf_from_files([f.name])
+        confr.init(conf_files=[f.name])
         assert myfn() == "val1"
 
 
@@ -79,27 +79,27 @@ def test_conf_from_dir():
         with open(conf2, "w") as f:
             f.write("key1: val2")
 
-        confr.conf_from_dir(
+        confr.init(
             conf_dir=conf_dir,
             base_conf="conf1",
         )
         assert myfn() == "val1"
 
-        confr.conf_from_dir(
+        confr.init(
             conf_dir=conf_dir,
             base_conf="conf1",
             overrides={"key1": "overwritten"},
         )
         assert myfn() == "overwritten"
 
-        confr.conf_from_dir(
+        confr.init(
             conf_dir=conf_dir,
             base_conf="conf1",
             conf_patches=["conf2"],
         )
         assert myfn() == "val2"
 
-        confr.conf_from_dir(
+        confr.init(
             conf_dir=conf_dir,
             base_conf="conf1",
             conf_patches=["conf2"],
@@ -111,7 +111,7 @@ def test_conf_from_dir():
 
 def test_write_conf_file():
     with TemporaryDirectory() as tmp_dir:
-        confr.conf_from_dict({"key1": "val1"})
+        confr.init(conf={"key1": "val1"})
         confr.set("key2", "val2")
 
         conf_fn = os.path.join(tmp_dir, "conf.yaml")

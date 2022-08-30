@@ -38,39 +38,40 @@ def modified_conf(**kwargs):
     return ModifiedConf(global_conf, **kwargs)
 
 
-def conf_from_dict(conf_dict, overrides=None, verbose=True):
-    global global_conf
-    report_conf_init(global_conf, verbose)
-    global_conf = Conf([conf_dict], overrides=overrides, verbose=verbose)
-
-
-def conf_from_files(conf_files, overrides=None, verbose=True):
-    global global_conf
-    report_conf_init(global_conf, verbose)
-    fps = [conf_files] if type(conf_files) == str else conf_files
-    conf_dicts = [read_yaml(fp, verbose=verbose) for fp in fps]
-    global_conf = Conf(conf_dicts, overrides=overrides, verbose=verbose)
-
-
-def conf_from_dir(
-    conf_dir=settings.CONF_DIR,
-    base_conf=settings.CONF_DIR,
-    conf_patches=[],
+def init(
+    conf=None,
+    conf_files=None,
+    conf_dir="config",
+    base_conf="_base",
     overrides=None,
     verbose=True,
-    ):
-    """Loads {conf_dir}/{base_conf}.yaml and all {conf_dir}/{conf_patch}.yaml files."""
-
-    conf_files = [
-        os.path.join(conf_dir, base + ".yaml")
-        for base in ([base_conf] if base_conf else []) + list(conf_patches)
-    ]
-
+    validate=None,
+    conf_patches=(),
+):
     global global_conf
     report_conf_init(global_conf, verbose)
-    fps = [conf_files] if type(conf_files) == str else conf_files
-    conf_dicts = [read_yaml(fp, verbose=verbose) for fp in fps]
-    global_conf = Conf(conf_dicts, overrides=overrides, verbose=verbose)
+
+    if conf:
+        """Loads conf directly from conf dict."""
+        global_conf = Conf([conf], overrides=overrides, verbose=verbose)
+
+    elif conf_files:
+        """Loads conf from conf files."""
+        fps = [conf_files] if type(conf_files) == str else conf_files
+        conf_dicts = [read_yaml(fp, verbose=verbose) for fp in fps]
+        global_conf = Conf(conf_dicts, overrides=overrides, verbose=verbose)
+
+    else:
+        """Loads {conf_dir}/{base_conf}.yaml and all {conf_dir}/{conf_patch}.yaml files."""
+
+        conf_files = [
+            os.path.join(conf_dir, base + ".yaml")
+            for base in ([base_conf] if base_conf else []) + list(conf_patches)
+        ]
+
+        fps = [conf_files] if type(conf_files) == str else conf_files
+        conf_dicts = [read_yaml(fp, verbose=verbose) for fp in fps]
+        global_conf = Conf(conf_dicts, overrides=overrides, verbose=verbose)
 
 
 def write_conf_file(fp, except_keys=[]):
