@@ -25,5 +25,6 @@ setuptools.setup(
     python_requires=">=3.6",
     install_requires=[
         "aiocontextvars>=0.2.2",
+        "pyyaml",
     ]
 )
