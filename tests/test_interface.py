@@ -54,32 +54,6 @@ def test_bind_fn():
     assert myfn(key1="val2") == "val2"
 
 
-def test_custom_key():
-    confr.init(conf={"key1": "val1", "key2": "val2"})
-    assert fn_custom_key() == "val2"
-    assert fn_custom_key(key1="val3") == "val3"
-
-
-def test_default():
-    confr.init(conf={"other_key": "other_val"}) # ensure we init from dict, rather than dir
-    assert fn_default() == "default"
-
-    confr.init(conf={"key1": "val1"})
-    assert fn_default() == "val1"
-
-
-def test_custom_key_and_default():
-    confr.init(conf={"key1": "val1", "key2": "val2"})
-    assert fn_custom_key_and_default() == "val2"
-    assert fn_custom_key_and_default(key1="val3") == "val3"
-
-    confr.init(conf={"other_key": "other_val"}) # ensure we init from dict, rather than dir
-    assert fn_custom_key_and_default() == "default"
-
-    confr.init(conf={"key2": "val2"})
-    assert fn_custom_key_and_default() == "val2"
-
-
 def test_bind_class():
     confr.init(conf={"key1": "val1", "key2": "val2"})
 
@@ -92,6 +66,32 @@ def test_bind_class():
     assert o.my_method2(key1="a") == ("val1", "a", confr.value)
     assert o.my_method1(key1="a", key2="b") == ("val1", "a", "b")
     assert o.my_method2(key1="a", key2="b") == ("val1", "a", "b")
+
+
+def test_value_custom_key():
+    confr.init(conf={"key1": "val1", "key2": "val2"})
+    assert fn_custom_key() == "val2"
+    assert fn_custom_key(key1="val3") == "val3"
+
+
+def test_value_default():
+    confr.init(conf={"other_key": "other_val"}) # ensure we init from dict, rather than dir
+    assert fn_default() == "default"
+
+    confr.init(conf={"key1": "val1"})
+    assert fn_default() == "val1"
+
+
+def test_value_custom_key_and_default():
+    confr.init(conf={"key1": "val1", "key2": "val2"})
+    assert fn_custom_key_and_default() == "val2"
+    assert fn_custom_key_and_default(key1="val3") == "val3"
+
+    confr.init(conf={"other_key": "other_val"}) # ensure we init from dict, rather than dir
+    assert fn_custom_key_and_default() == "default"
+
+    confr.init(conf={"key2": "val2"})
+    assert fn_custom_key_and_default() == "val2"
 
 
 def test_modified_conf():
@@ -167,6 +167,9 @@ def test_write_conf_file():
 # test_conf_get_set()
 # test_bind_fn()
 # test_bind_class()
+# test_value_custom_key()
+# test_value_default()
+# test_value_custom_key_and_default()
 # test_modified_conf()
 # test_conf_from_files()
 # test_conf_from_dir()
