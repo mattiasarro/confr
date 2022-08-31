@@ -7,7 +7,7 @@ from confr.utils import read_yaml
 
 
 @confr.bind
-def myfn(key1=confr.value):
+def fn1(key1=confr.value):
     return key1
 
 
@@ -42,16 +42,16 @@ class MyClass:
 
 def test_conf_get_set():
     confr.init(conf={"key1": "val1"})
-    assert confr.get("key1") == myfn() == "val1", (myfn(), type(myfn()))
+    assert confr.get("key1") == fn1() == "val1", (fn1(), type(fn1()))
 
     confr.set("key1", "val2")
-    assert confr.get("key1") == myfn() == "val2"
+    assert confr.get("key1") == fn1() == "val2"
 
 
 def test_bind_fn():
     confr.init(conf={"key1": "val1"})
-    assert myfn() == "val1"
-    assert myfn(key1="val2") == "val2"
+    assert fn1() == "val1"
+    assert fn1(key1="val2") == "val2"
 
 
 def test_bind_class():
@@ -96,10 +96,10 @@ def test_value_custom_key_and_default():
 
 def test_modified_conf():
     confr.init(conf={"key1": "val1"})
-    assert myfn() == "val1"
+    assert fn1() == "val1"
     with confr.modified_conf(key1="val2"):
-        assert myfn() == "val2"
-    assert myfn() == "val1"
+        assert fn1() == "val2"
+    assert fn1() == "val1"
 
 
 def test_conf_from_files():
@@ -108,7 +108,7 @@ def test_conf_from_files():
         f.flush()
 
         confr.init(conf_files=[f.name])
-        assert myfn() == "val1"
+        assert fn1() == "val1"
 
 
 def test_conf_from_dir():
@@ -124,21 +124,21 @@ def test_conf_from_dir():
             conf_dir=conf_dir,
             base_conf="conf1",
         )
-        assert myfn() == "val1"
+        assert fn1() == "val1"
 
         confr.init(
             conf_dir=conf_dir,
             base_conf="conf1",
             overrides={"key1": "overwritten"},
         )
-        assert myfn() == "overwritten"
+        assert fn1() == "overwritten"
 
         confr.init(
             conf_dir=conf_dir,
             base_conf="conf1",
             conf_patches=["conf2"],
         )
-        assert myfn() == "val2"
+        assert fn1() == "val2"
 
         confr.init(
             conf_dir=conf_dir,
@@ -147,7 +147,7 @@ def test_conf_from_dir():
             overrides={"key1": "overwritten"},
 
         )
-        assert myfn() == "overwritten"
+        assert fn1() == "overwritten"
 
 
 def test_write_conf_file():
