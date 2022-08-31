@@ -167,7 +167,7 @@ Note that you can still use the regular, non-scoped arguments along with scoped 
 
 ## References to singletons
 
-If a config value in `_base.yaml` starrs with a `$`, it is considered a reference to a singleton. For example, we might do  the following:
+If a config value in `_base.yaml` with the format `${singleton}`, it is considered a reference to a singleton. For example, we might do  the following:
 
 **_base.yaml**
 
@@ -176,7 +176,7 @@ my_embedding_model: "@my_module.models.embedding_model()"
 my_embedding_model/location: "/path/to/embedding_model/weights.h5"
 classifier_model: "@my_module.models.classifier_model()"
 classifier_model/location: "/path/to/embedding_model/weights.h5"
-classifier_model/embedding_model: "$my_embedding_model"
+classifier_model/embedding_model: "${my_embedding_model}"
 ```
 
 Here we have said that, when we initialize the `classifier_model` singleton, the value of its keyword argument `embedding_model` will be the value of the `my_embedding_model` singleton.
@@ -190,7 +190,7 @@ classifier_model: "@my_module.models.classifier_model()"
 classifier_model/location: "/path/to/embedding_model/weights.h5"
 ```
 
-Notice that we've changed the name of our embedding model singleton from `my_embedding_model` to `embedding_model`, which coincides with the `my_module.models.classifier_model` argument `embedding_model`. Therefore we can omit the line `classifier_model/embedding_model: "$embedding_model"`, because this is the default behaviour anyway.
+Notice that we've changed the name of our embedding model singleton from `my_embedding_model` to `embedding_model`, which coincides with the `my_module.models.classifier_model` argument `embedding_model`. Therefore we can omit the line `classifier_model/embedding_model: "${embedding_model}"`, because this is the default behaviour anyway.
 
 
 ## confr.modified_conf and overrides

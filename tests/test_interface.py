@@ -6,6 +6,9 @@ import confr
 from confr.utils import read_yaml
 
 
+# mock functions #
+
+
 @confr.bind
 def fn1(key1=confr.value):
     return key1
@@ -37,6 +40,21 @@ def fn_custom_key_and_default(key1=confr.value("key2", default="default")):
 
 
 @confr.bind
+def fn_python_reference(preprocessing_fn=confr.value):
+    return preprocessing_fn()
+
+
+@confr.bind
+def get_model1(encoder=confr.value):
+    return encoder
+
+
+@confr.bind
+def get_model2(model=confr.value("encoder")):
+    return model
+
+
+@confr.bind
 class MyClass:
     def __init__(self, key1=confr.value):
         self.key1 = key1
@@ -48,6 +66,9 @@ class MyClass:
     # notice this method is not annotated with @confr.bind
     def my_method2(self, key1=None, key2=confr.value):
         return self.key1, key1, key2
+
+
+# tests #
 
 
 def test_conf_get_set():
@@ -120,6 +141,41 @@ def test_value_custom_key_and_default():
     assert fn_custom_key_and_default() == "val2"
 
 
+def test_python_reference():
+    confr.init(conf={"preprocessing_fn": "@confr.test_imports.my_fn"})
+    assert fn_python_reference() == 123
+
+
+def test_singleton():
+    conf = {
+        "encoder": "@confr.test_imports.get_encoder()",
+        "encoder/num": 4,
+        "num": 3,
+    }
+    confr.init(conf=conf)
+
+    my_model1 = get_model1()
+    my_model2 = get_model1()
+    assert my_model1 == my_model2
+    assert my_model1.num == my_model2.num == 4
+
+
+def test_interpolation():
+    conf = {
+        "k1": "v1",
+        "k2": {"k21": "v21", "k22": "${k1}", "k23": "${k3.k31}"},
+        "k3": {"k31": "v31", "k32": "${.k31}"}
+    }
+    confr.init(conf=conf)
+
+    assert confr.get("k1") == "v1"
+    assert confr.get("k2") == {"k21": "v21", "k22": "v1", "k23": "v31"}
+    assert confr.get("k2.k21") == "v21"
+    assert confr.get("k2.k22") == "v1"
+    assert confr.get("k2.k23") == "v31"
+    assert confr.get("k3.k32") == "v31"
+
+
 def test_modified_conf():
     confr.init(conf={"key1": "val1"})
     assert fn1() == "val1"
@@ -189,17 +245,5 @@ def test_write_conf_file():
         confr.write_conf_file(conf_fn, except_keys=["key1"])
         assert read_yaml(conf_fn) == {"key2": "val2"}
 
-
-# test_conf_get_set()
-# test_bind_fn()
-# test_bind_class()
-# test_value_custom_key()
-# test_value_custom_key_deep()
-# test_value_default()
-# test_value_custom_key_and_default()
-# test_modified_conf()
-# test_conf_from_files()
-# test_conf_from_dir()
-# test_write_conf_file()
 
 # %%
