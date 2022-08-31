@@ -48,8 +48,8 @@ def value(key=None, default=None):
 def init(
     conf=None,
     conf_files=None,
-    conf_dir="config",
-    base_conf="_base",
+    conf_dir=settings.CONF_DIR,
+    base_conf=settings.BASE_CONF,
     overrides=None,
     verbose=True,
     validate=None,
@@ -124,7 +124,7 @@ def _get_call_overrides(cls_or_fn, args, kwargs, subkeys):
                     else:
                         get_key = v.key # path is absolute
                     get_default = v.default
-            else: # regular value
+            else: # non-configurable value
                 continue
             ret[k] = global_conf.get(get_key, get_default)
         return ret

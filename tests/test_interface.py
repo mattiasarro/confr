@@ -22,6 +22,11 @@ def fn_custom_key(key1=confr.value("key2")):
 
 
 @confr.bind
+def fn_custom_key_deep(key1=confr.value("k1.k2.k3")):
+    return key1
+
+
+@confr.bind
 def fn_default(key1=confr.value(default="default")):
     return key1
 
@@ -87,6 +92,12 @@ def test_value_custom_key():
     confr.init(conf={"key1": "val1", "key2": "val2"})
     assert fn_custom_key() == "val2"
     assert fn_custom_key(key1="val3") == "val3"
+
+
+def test_value_custom_key_deep():
+    confr.init(conf={"key1": "val1", "key2": "val2", "k1": {"k2": {"k3": "v3"}}})
+    assert fn_custom_key_deep() == "v3"
+    assert fn_custom_key_deep(key1="val3") == "val3"
 
 
 def test_value_default():
@@ -183,6 +194,7 @@ def test_write_conf_file():
 # test_bind_fn()
 # test_bind_class()
 # test_value_custom_key()
+# test_value_custom_key_deep()
 # test_value_default()
 # test_value_custom_key_and_default()
 # test_modified_conf()

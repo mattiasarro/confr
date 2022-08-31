@@ -1,3 +1,5 @@
+import omegaconf
+from omegaconf import OmegaConf
 import aiocontextvars
 
 from confr.utils import import_python_object
@@ -12,52 +14,48 @@ class Conf:
         verbose=True,
         ):
 
+        self.strict = strict
         self.c_singletons = {}
-        self.c_original = {}
+        self.c_original = OmegaConf.create()
         self.overrides_dicts = aiocontextvars.ContextVar("overrides_dicts", default=[])
 
         for conf_dict in conf_dicts:
-            self._init_conf_dict(conf_dict, strict)
+            self._init_conf_dict(conf_dict)
 
         if overrides:
             if verbose:
                 print(f"Overwriting {len(overrides)} configs with `overrides`")
             self.add_overrides(overrides, verbose)
 
-        if "seed" in self.c_original:
+        if self._in_c_original("seed"):
             self._set_seed(verbose)
 
-    def _init_conf_dict(self, conf_dict, strict):
+    def _init_conf_dict(self, conf_dict):
+        # TODO parse full config
         for k, v in conf_dict.items():
-            if self.c_original.get(k) is not None:
-                if self.c_original[k] != v:
-                    msg = f"override {k} = {v} (formerly {self.c_original[k]})"
-                    if strict:
-                        raise Exception("can't " + msg)
-                    else:
-                        print("    " + msg)
-            self.c_original[k] = v
+            self.set(k, v)
 
     def get(self, k, default=None):
-        # TODO handle dot notation for nested keys
-        try:
-            return self[k]
-        except AssertionError:
-            return default
-
-    def set(self, k, v):
-        self.c_original[k] = v
-
-    def __getitem__(self, k):
         for overrides_dict in self.overrides_dicts.get()[::-1]:
             if k in overrides_dict:
                 return self._get_val(k, overrides_dict[k])
 
-        assert k in self.c_original, f"no config '{k}' found in {list(self.c_original.keys())}"
-        return self._get_val(k, self.c_original[k])
+        if self._in_c_original(k):
+            return self._get_val(k, self._get_c_original(k))
+        else:
+            if default is None:
+                raise Exception(f"no config '{k}' found in {list(self.c_original.keys())}")
+            else:
+                return default
+
+    def set(self, k, v):
+        self._set_c_original(k, v)
+
+    def __getitem__(self, k):
+        return self.get(k)
 
     def __setitem__(self, k, v):
-        self.c_original[k] = v
+        self.set(k, v)
 
     def _get_val(self, k, orig_val):
         if type(orig_val) == str:
@@ -78,6 +76,23 @@ class Conf:
         else:
             return orig_val
 
+    def _set_c_original(self, k, v):
+        if self._get_c_original(k) is not None:
+            if self._get_c_original(k) != v:
+                msg = f"override {k} = {v} (formerly {self._get_c_original(k)})"
+                if self.strict:
+                    raise Exception("can't " + msg)
+                else:
+                    print("    " + msg)
+
+        self.c_original[k] = v
+
+    def _get_c_original(self, k):
+        return OmegaConf.select(self.c_original, k)
+
+    def _in_c_original(self, k):
+        return not OmegaConf.select(self.c_original, k, default="__missing__") == "__missing__"
+
     def _get_python_object(self, k, orig_val):
         if orig_val.startswith("@") and orig_val.endswith("()"):
             assert k != "__SINGLETON_ATTRIBUTE__", \
@@ -90,7 +105,7 @@ class Conf:
         elif orig_val.startswith("@"):
             return import_python_object(orig_val[1:])
         elif orig_val[0] == "$": # reference to another config val
-            return self[orig_val[1:]]
+            return self.get(orig_val[1:])
         else:
             return orig_val
 
@@ -129,7 +144,9 @@ class Conf:
         return active_conf
 
     def _set_seed(self, verbose=True):
-        seed = self["seed"]
+        # TODO remove
+
+        seed = self.get("seed")
         if seed is not None:
             if verbose:
                 print(f"Setting seed to {seed}")
