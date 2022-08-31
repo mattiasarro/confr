@@ -11,6 +11,11 @@ def fn1(key1=confr.value):
     return key1
 
 
+@confr.bind(subkeys="nested")
+def fn1_subkeys(key1=confr.value):
+    return key1
+
+
 @confr.bind
 def fn_custom_key(key1=confr.value("key2")):
     return key1
@@ -66,6 +71,16 @@ def test_bind_class():
     assert o.my_method2(key1="a") == ("val1", "a", confr.value)
     assert o.my_method1(key1="a", key2="b") == ("val1", "a", "b")
     assert o.my_method2(key1="a", key2="b") == ("val1", "a", "b")
+
+
+def test_bind_fn_subkeys():
+    confr.init(conf={"key1": "val1", "nested": {"key1": "nested1"}})
+
+    assert fn1() == "val1"
+    assert fn1(key1="val2") == "val2"
+
+    assert fn1_subkeys() == "nested1"
+    assert fn1_subkeys(key1="val2") == "val2"
 
 
 def test_value_custom_key():

@@ -19,20 +19,26 @@ def set(k, v):
     return global_conf.set(k, v)
 
 
-def bind(orig):
-    if inspect.isfunction(orig):
-        def confr_wrapped_function(*args, **kwargs):
-            overrides = _get_call_overrides(orig, args, kwargs)
-            return orig(*args, **kwargs, **overrides)
+def bind(*args, subkeys=None):
+    def decorator(orig):
+        if inspect.isfunction(orig):
+            def confr_wrapped_function(*args, **kwargs):
+                overrides = _get_call_overrides(orig, args, kwargs, subkeys)
+                return orig(*args, **kwargs, **overrides)
 
-        return confr_wrapped_function
-    else:
-        class ConfrWrappedClass(orig):
-            def __init__(self, *args, **kwargs):
-                overrides = _get_call_overrides(orig, args, kwargs)
-                super().__init__(*args, **kwargs, **overrides)
+            return confr_wrapped_function
+        else:
+            class ConfrWrappedClass(orig):
+                def __init__(self, *args, **kwargs):
+                    overrides = _get_call_overrides(orig, args, kwargs, subkeys)
+                    super().__init__(*args, **kwargs, **overrides)
 
-        return ConfrWrappedClass
+            return ConfrWrappedClass
+
+    if len(args): # used as confr.bind; args = (orig), subkeys = None
+        return decorator(args[0])
+    else: # used as confr.bind(subkeys="asd"); args = (), subkeys = "asd"
+        return decorator
 
 
 def value(key=None, default=None):
@@ -93,7 +99,7 @@ def write_conf_file(fp, except_keys=[]):
     print(f"Wrote configurations for: {list(ret.keys())}")
 
 
-def _get_call_overrides(cls_or_fn, args, kwargs):
+def _get_call_overrides(cls_or_fn, args, kwargs, subkeys):
     try:
         bound_args = inspect.signature(cls_or_fn).bind(*args, **kwargs)
     except Exception as e:
@@ -106,12 +112,21 @@ def _get_call_overrides(cls_or_fn, args, kwargs):
         ret = {}
         for k, v in default_args.items():
             if callable(v) and v == value:
-                ret[k] = global_conf[k]
+                get_key = f"{subkeys}.{k}" if subkeys else k
+                get_default = None
             elif isinstance(v, Value):
                 if v.key is None:
-                    ret[k] = global_conf.get(k, v.default)
+                    get_key = f"{subkeys}.{k}" if subkeys else k
+                    get_default = v.default
                 else:
-                    ret[k] = global_conf.get(v.key, v.default)
+                    if v.key[0] == ".":
+                        get_key = subkeys + v.key if subkeys else v.key # path is potentially relative to subkey
+                    else:
+                        get_key = v.key # path is absolute
+                    get_default = v.default
+            else: # regular value
+                continue
+            ret[k] = global_conf.get(get_key, get_default)
         return ret
     except:
         print(f"Trying to assign configurations to {cls_or_fn.__name__}")
