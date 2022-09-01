@@ -6,8 +6,31 @@ from confr.utils import import_python_object
 # TODO singletons as omegaconf?
 
 
+def _in(conf, k):
+    if type(conf) == dict:
+        for part in k.split("."):
+            if part in conf:
+                conf = conf[part]
+            else:
+                return False
+        return True
+    else:
+        return not OmegaConf.select(conf, k, default="__missing__") == "__missing__"
+
+
+def _get(conf, k):
+    if type(conf) == dict:
+        for part in k.split("."):
+            if part not in conf:
+                return
+            conf = conf[part]
+        return conf
+    else:
+        return OmegaConf.select(conf, k)
+
+
 def _set(conf, k, v, strict=False):
-    if _get(conf, k) is not None:
+    if not _in(conf, k):
         if _get(conf, k) != v:
             msg = f"override {k} = {v} (formerly {_get(conf, k)})"
             if strict:
@@ -15,13 +38,16 @@ def _set(conf, k, v, strict=False):
             else:
                 print("    " + msg)
 
-    conf[k] = v
-
-def _get(conf, k):
-    return OmegaConf.select(conf, k)
-
-def _in(conf, k):
-    return not OmegaConf.select(conf, k, default="__missing__") == "__missing__"
+    if type(conf) == dict:
+        parts = k.split(".")
+        if len(parts) > 1:
+            for part in parts[:-1]:
+                conf = conf[part]
+            conf[parts[-1]] = v
+        else:
+            conf[k] = v
+    else:
+        conf[k] = v
 
 
 class Conf:
