@@ -164,7 +164,7 @@ def test_interpolation():
     conf = {
         "k1": "v1",
         "k2": {"k21": "v21", "k22": "${k1}", "k23": "${k3.k31}"},
-        "k3": {"k31": "v31", "k32": "${.k31}"}
+        "k3": {"k31": "v31", "k32": "${.k31}"},
     }
     confr.init(conf=conf)
 

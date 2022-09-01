@@ -1,8 +1,27 @@
-import omegaconf
 from omegaconf import OmegaConf
 import aiocontextvars
 
 from confr.utils import import_python_object
+# TODO overrides as omegaconf?
+# TODO singletons as omegaconf?
+
+
+def _set(conf, k, v, strict=False):
+    if _get(conf, k) is not None:
+        if _get(conf, k) != v:
+            msg = f"override {k} = {v} (formerly {_get(conf, k)})"
+            if strict:
+                raise Exception("can't " + msg)
+            else:
+                print("    " + msg)
+
+    conf[k] = v
+
+def _get(conf, k):
+    return OmegaConf.select(conf, k)
+
+def _in(conf, k):
+    return not OmegaConf.select(conf, k, default="__missing__") == "__missing__"
 
 
 class Conf:
@@ -27,7 +46,7 @@ class Conf:
                 print(f"Overwriting {len(overrides)} configs with `overrides`")
             self.add_overrides(overrides, verbose)
 
-        if self._in_c_original("seed"):
+        if _in(self.c_original, "seed"):
             self._set_seed(verbose)
 
     def _init_conf_dict(self, conf_dict):
@@ -40,8 +59,9 @@ class Conf:
             if k in overrides_dict:
                 return self._get_val(k, overrides_dict[k])
 
-        if self._in_c_original(k):
-            return self._get_val(k, self._get_c_original(k))
+        # check if in singletons
+        if _in(self.c_original, k):
+            return self._get_val(k, _get(self.c_original, k))
         else:
             if default is None:
                 raise Exception(f"no config '{k}' found in {list(self.c_original.keys())}")
@@ -49,7 +69,7 @@ class Conf:
                 return default
 
     def set(self, k, v):
-        self._set_c_original(k, v)
+        _set(self.c_original, k, v, strict=self.strict)
 
     def __getitem__(self, k):
         return self.get(k)
@@ -75,23 +95,6 @@ class Conf:
             return {k: self._get_val(None, v) for v in orig_val for k, v in orig_val.items()}
         else:
             return orig_val
-
-    def _set_c_original(self, k, v):
-        if self._get_c_original(k) is not None:
-            if self._get_c_original(k) != v:
-                msg = f"override {k} = {v} (formerly {self._get_c_original(k)})"
-                if self.strict:
-                    raise Exception("can't " + msg)
-                else:
-                    print("    " + msg)
-
-        self.c_original[k] = v
-
-    def _get_c_original(self, k):
-        return OmegaConf.select(self.c_original, k)
-
-    def _in_c_original(self, k):
-        return not OmegaConf.select(self.c_original, k, default="__missing__") == "__missing__"
 
     def _get_python_object(self, k, orig_val):
         if orig_val.startswith("@") and orig_val.endswith("()"):

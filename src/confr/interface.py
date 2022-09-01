@@ -111,20 +111,20 @@ def _get_call_overrides(cls_or_fn, args, kwargs, subkeys):
     try:
         ret = {}
         for k, v in default_args.items():
-            if callable(v) and v == value:
+            if callable(v) and v == value: # kwarg=confr.value
                 get_key = f"{subkeys}.{k}" if subkeys else k
                 get_default = None
-            elif isinstance(v, Value):
-                if v.key is None:
+            elif isinstance(v, Value): # kwarg=confr.value(...)
+                if v.key is None: # kwarg=confr.value(default="default")
                     get_key = f"{subkeys}.{k}" if subkeys else k
                     get_default = v.default
-                else:
+                else: # kwarg=confr.value("key", default="default")
                     if v.key[0] == ".":
                         get_key = subkeys + v.key if subkeys else v.key # path is potentially relative to subkey
                     else:
                         get_key = v.key # path is absolute
                     get_default = v.default
-            else: # non-configurable value
+            else: # non-configurable value, e.g. kwarg=123
                 continue
             ret[k] = global_conf.get(get_key, get_default)
         return ret
