@@ -42,12 +42,16 @@ def _set(conf, k, v, strict=False):
         parts = k.split(".")
         if len(parts) > 1:
             for part in parts[:-1]:
+                if part not in conf:
+                    conf[part] = {}
                 conf = conf[part]
             conf[parts[-1]] = v
         else:
             conf[k] = v
     else:
         conf[k] = v
+
+    return v
 
 
 class Conf:
@@ -85,8 +89,9 @@ class Conf:
             if k in overrides_dict:
                 return self._get_val(k, overrides_dict[k])
 
-        # check if in singletons
-        if _in(self.c_original, k):
+        if _in(self.c_singletons, k):
+            return self._get_val(k, _get(self.c_singletons, k))
+        elif _in(self.c_original, k):
             return self._get_val(k, _get(self.c_original, k))
         else:
             if default is None:
@@ -106,11 +111,11 @@ class Conf:
     def _get_val(self, k, orig_val):
         if type(orig_val) == str:
             if k is not None and orig_val[0] == "@":
-                # _get_val is called for a root element of conf.yaml, so memoize the result
-                if self.c_singletons.get(k) is None:
-                    self.c_singletons[k] = self._get_python_object(k, orig_val)
-                return self.c_singletons[k]
             elif k is None and orig_val[0] in ["@", "$"]:
+                if not _in(self.c_singletons, k):
+                    # memoize the result
+                    return _set(self.c_singletons, k, self._get_python_object(k, orig_val))
+                return _get(self.c_singletons, k)
                 # _get_val is called for a non-root element of conf.yaml, therefore we can't memoize it
                 return self._get_python_object(None, orig_val)
             else:
