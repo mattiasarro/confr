@@ -1,4 +1,5 @@
-from confr.models import _in, _get, _set
+from omegaconf import OmegaConf
+from confr.models import _in, _get, _set, _is_interpolation
 
 
 def test_in_dict():
@@ -25,3 +26,22 @@ def test_set_dict():
     assert d == {"k": "v", "k2": {}}
     _set(d, "k2.k3", "v3")
     assert d == {"k": "v", "k2": {"k3": "v3"}}
+
+
+def test_is_interpolation():
+    conf = {
+        "encoder": "@confr.test_imports.get_encoder()",
+        "encoder/num": 4,
+        "num": 3,
+        "k1": {"k2": "${encoder}"},
+        "k3": "${encoder}",
+    }
+    conf = OmegaConf.create(conf)
+
+    assert not _is_interpolation(conf, "encoder")
+    assert not _is_interpolation(conf, "encoder/num")
+    assert not _is_interpolation(conf, "num")
+    assert _is_interpolation(conf, "k1.k2")
+    assert _is_interpolation(conf, "k3")
+    assert not _is_interpolation(conf, "k1.unknown")
+    assert not _is_interpolation(conf, "unknown")

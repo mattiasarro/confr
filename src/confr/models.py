@@ -54,6 +54,17 @@ def _set(conf, k, v, strict=False):
     return v
 
 
+def _is_interpolation(conf, k):
+    if "." in k:
+        parts = k.split(".")
+        k = parts[-1]
+        for part in parts[:-1]:
+            if part not in conf:
+                return False
+            conf = conf[part]
+    return OmegaConf.is_interpolation(conf, k)
+
+
 class Conf:
     def __init__(
         self,
