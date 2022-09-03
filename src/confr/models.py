@@ -1,32 +1,23 @@
-from omegaconf import OmegaConf
 import aiocontextvars
 
 from confr.utils import import_python_object
-# TODO overrides as omegaconf?
-# TODO singletons as omegaconf?
-
+# TODO interpolations in overrides
 
 def _in(conf, k):
-    if type(conf) == dict:
-        for part in k.split("."):
-            if part in conf:
-                conf = conf[part]
-            else:
-                return False
-        return True
-    else:
-        return not OmegaConf.select(conf, k, default="__missing__") == "__missing__"
+    for part in k.split("."):
+        if part in conf:
+            conf = conf[part]
+        else:
+            return False
+    return True
 
 
 def _get(conf, k):
-    if type(conf) == dict:
-        for part in k.split("."):
-            if part not in conf:
-                return
-            conf = conf[part]
-        return conf
-    else:
-        return OmegaConf.select(conf, k)
+    for part in k.split("."):
+        if part not in conf:
+            return
+        conf = conf[part]
+    return conf
 
 
 def _set(conf, k, v, strict=False):
@@ -38,16 +29,13 @@ def _set(conf, k, v, strict=False):
             else:
                 print("    " + msg)
 
-    if type(conf) == dict:
-        parts = k.split(".")
-        if len(parts) > 1:
-            for part in parts[:-1]:
-                if part not in conf:
-                    conf[part] = {}
-                conf = conf[part]
-            conf[parts[-1]] = v
-        else:
-            conf[k] = v
+    parts = k.split(".")
+    if len(parts) > 1:
+        for part in parts[:-1]:
+            if part not in conf:
+                conf[part] = {}
+            conf = conf[part]
+        conf[parts[-1]] = v
     else:
         conf[k] = v
 
@@ -55,14 +43,18 @@ def _set(conf, k, v, strict=False):
 
 
 def _is_interpolation(conf, k):
-    if "." in k:
-        parts = k.split(".")
-        k = parts[-1]
-        for part in parts[:-1]:
-            if part not in conf:
-                return False
-            conf = conf[part]
-    return OmegaConf.is_interpolation(conf, k)
+    return _is_interpolation_val(_get(conf, k))
+
+
+def _is_interpolation_val(val):
+    return type(val) == str and val.startswith("${") and val.endswith("}")
+
+
+def _interpolated_key(orig_val):
+    interpolated_key = orig_val[2:-1]
+    assert not interpolated_key.startswith("."), \
+        ("Relative interpolations are not yet supported.", orig_val, interpolated_key)
+    return interpolated_key
 
 
 class Conf:
@@ -76,7 +68,7 @@ class Conf:
 
         self.strict = strict
         self.c_singletons = {}
-        self.c_original = OmegaConf.create()
+        self.c_original = {}
         self.overrides_dicts = aiocontextvars.ContextVar("overrides_dicts", default=[])
 
         for conf_dict in conf_dicts:
@@ -121,51 +113,62 @@ class Conf:
 
     def _get_val(self, k, orig_val):
         if type(orig_val) == str:
-            if k is not None and orig_val[0] == "@":
-            elif k is None and orig_val[0] in ["@", "$"]:
+            if _is_interpolation_val(orig_val):
+                assert k is not None, "Not supported."
+                return self.get(_interpolated_key(orig_val))
+            elif k is not None and orig_val.startswith("@"):
                 if not _in(self.c_singletons, k):
                     # memoize the result
                     return _set(self.c_singletons, k, self._get_python_object(k, orig_val))
                 return _get(self.c_singletons, k)
-                # _get_val is called for a non-root element of conf.yaml, therefore we can't memoize it
+            elif k is None and orig_val.startswith("@"):
+                # _get_val is called for a list element, therefore we can't memoize it
                 return self._get_python_object(None, orig_val)
             else:
                 return orig_val
         elif type(orig_val) == list:
+            # TODO handle int indexes
             return [self._get_val(None, v) for v in orig_val]
         elif type(orig_val) == dict:
-            return {k: self._get_val(None, v) for v in orig_val for k, v in orig_val.items()}
+            return {
+                k2: self._get_val(f"{k}.{k2}", v)
+                for k2, v in orig_val.items()
+            }
         else:
             return orig_val
 
     def _get_python_object(self, k, orig_val):
         if orig_val.startswith("@") and orig_val.endswith("()"):
-            assert k != "__SINGLETON_ATTRIBUTE__", \
-            (
-                'Tried to pass a config like `singleton_name/attribute_name: "@MyClass()"`, '
-                'which is not supported. Instead define a singleton `my_obj: "@MyClass()"` and '
-                'refer to it as `singleton_name/attribute_name = "$my_obj"`'
-            )
             return self._init_python_object(k, orig_val[1:-2])
         elif orig_val.startswith("@"):
             return import_python_object(orig_val[1:])
-        elif orig_val[0] == "$": # reference to another config val
-            return self.get(orig_val[1:])
         else:
-            return orig_val
+            raise Exception("_get_python_object orig_val should start with '@'")
 
     def _init_python_object(self, k, module_path_and_var_name):
         overrides = {}
         if k is not None:
+            conf = self.to_dict()
+            if "." in k:
+                parts = k.split(".")
+                conf = _get(conf, ".".join(parts[:-1])) # get parent node of obj in conf
+                k = parts[-1] # look for key in that subtree
+
             prefix = k + "/"
-            for conf_k, conf_v in self.to_dict().items():
+            for conf_k, conf_v in conf.items():
                 if conf_k.startswith(prefix):
+                    if type(conf_v) == str and conf_v.startswith("@"):
+                        if conf_v.endswith("()"):
+                            raise Exception((
+                                'Tried to pass a config like `singleton_name/attribute_name: "@MyClass()"`, '
+                                'which is not supported. Instead define a singleton `my_obj: "@MyClass()"` and '
+                                'refer to it as `singleton_name/attribute_name = "${my_obj}"`'
+                            ))
+                        else:
+                            conf_v = self._get_python_object(None, conf_v)
+
                     override_key = conf_k[len(prefix):]
-                    if type(conf_v) == str and conf_v[0] in ["@", "$"]:
-                        override_val = self._get_python_object("__SINGLETON_ATTRIBUTE__", conf_v)
-                    else:
-                        override_val = conf_v
-                    overrides[override_key] = override_val
+                    overrides[override_key] = conf_v
 
         func = import_python_object(module_path_and_var_name)
         return func(**overrides)

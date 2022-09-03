@@ -163,17 +163,39 @@ def test_singleton():
 def test_interpolation():
     conf = {
         "k1": "v1",
-        "k2": {"k21": "v21", "k22": "${k1}", "k23": "${k3.k31}"},
-        "k3": {"k31": "v31", "k32": "${.k31}"},
+        "k2": {"k21": "v21", "k22": "${k1}"},
     }
     confr.init(conf=conf)
 
     assert confr.get("k1") == "v1"
-    assert confr.get("k2") == {"k21": "v21", "k22": "v1", "k23": "v31"}
+    assert confr.get("k2") == {"k21": "v21", "k22": "v1"}
     assert confr.get("k2.k21") == "v21"
     assert confr.get("k2.k22") == "v1"
-    assert confr.get("k2.k23") == "v31"
-    assert confr.get("k3.k32") == "v31"
+
+
+def test_interpolation_singleton():
+    conf = {
+        "encoder": "@confr.test_imports.get_encoder()",
+        "encoder/num": 4,
+        "num": 3,
+        "k1": {"k2": "${encoder}"},
+        "my": {
+            "encoder": "@confr.test_imports.get_encoder()",
+            "encoder/num": 5,
+        },
+    }
+    confr.init(conf=conf)
+
+    my_model1 = get_model1()
+    my_model2 = get_model2()
+    encoder = confr.get("encoder")
+    k1_k2 = confr.get("k1.k2")
+    my_encoder = confr.get("my.encoder")
+
+    assert my_encoder.num == 5
+    assert my_model1.num == my_model2.num == encoder.num == k1_k2.num == 4
+    assert my_model1 == my_model2 == encoder == k1_k2
+    assert my_encoder != my_model1 and my_encoder != my_model2 and my_encoder != k1_k2
 
 
 def test_modified_conf():
@@ -233,6 +255,8 @@ def test_conf_from_dir():
 
 
 def test_write_conf_file():
+    # TODO test writing singleton and python reference
+    # TODO test writing interpolation, interpolation to singleton
     with TemporaryDirectory() as tmp_dir:
         confr.init(conf={"key1": "val1"})
         confr.set("key2", "val2")

@@ -1,4 +1,3 @@
-from omegaconf import OmegaConf
 from confr.models import _in, _get, _set, _is_interpolation
 
 
@@ -36,7 +35,6 @@ def test_is_interpolation():
         "k1": {"k2": "${encoder}"},
         "k3": "${encoder}",
     }
-    conf = OmegaConf.create(conf)
 
     assert not _is_interpolation(conf, "encoder")
     assert not _is_interpolation(conf, "encoder/num")
