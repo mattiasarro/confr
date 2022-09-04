@@ -1,6 +1,7 @@
+import os
 import aiocontextvars
 
-from confr.utils import import_python_object
+from confr.utils import import_python_object, read_yaml
 # TODO interpolations in overrides
 
 def _in(conf, k):
@@ -57,6 +58,14 @@ def _interpolated_key(orig_val):
     return interpolated_key
 
 
+def _follow_file_refs(conf_dict, conf_dir):
+    for k, v in conf_dict.items():
+        if type(v) == dict and "_file" in v:
+            conf_dict[k] = read_yaml(os.path.join(conf_dir, v["_file"]))
+        if type(v) == dict:
+            _follow_file_refs(v, conf_dir)
+
+
 class Conf:
     def __init__(
         self,
@@ -85,6 +94,9 @@ class Conf:
     def _init_conf_dict(self, conf_dict):
         for k, v in conf_dict.items():
             self.set(k, v)
+
+    def follow_file_refs(self, conf_dir):
+        _follow_file_refs(self.c_original, conf_dir)
 
     def get(self, k, default=None):
         for overrides_dict in self.overrides_dicts.get()[::-1]:

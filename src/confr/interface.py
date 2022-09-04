@@ -3,7 +3,7 @@ import inspect
 
 from confr import settings
 from confr.utils import write_yaml, report_conf_init, read_yaml, strip_keys
-from confr.models import Conf, ModifiedConf
+from confr.models import Conf, ModifiedConf, _follow_file_refs
 from collections import namedtuple
 
 
@@ -79,6 +79,7 @@ def init(
         fps = [conf_files] if type(conf_files) == str else conf_files
         conf_dicts = [read_yaml(fp, verbose=verbose) for fp in fps]
         global_conf = Conf(conf_dicts, overrides=overrides, verbose=verbose)
+        global_conf.follow_file_refs(conf_dir)
 
 
 def modified_conf(**kwargs):
@@ -89,6 +90,10 @@ def write_conf_file(fp, except_keys=[]):
     ret = strip_keys(global_conf.to_dict(), except_keys=except_keys)
     write_yaml(fp, ret)
     print(f"Wrote configurations for: {list(ret.keys())}")
+
+
+def to_dict():
+    return global_conf.to_dict()
 
 
 def _get_call_overrides(cls_or_fn, args, kwargs, subkeys):

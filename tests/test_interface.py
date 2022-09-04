@@ -4,7 +4,7 @@ from copy import deepcopy
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import confr
-from confr.utils import read_yaml
+from confr.utils import read_yaml, write_yaml
 
 
 # mock functions #
@@ -218,12 +218,10 @@ def test_conf_from_files():
 
 def test_conf_from_dir():
     with TemporaryDirectory() as conf_dir:
-        conf1 = os.path.join(conf_dir, "conf1.yaml")
-        conf2 = os.path.join(conf_dir, "conf2.yaml")
-        with open(conf1, "w") as f:
-            f.write("key1: val1")
-        with open(conf2, "w") as f:
-            f.write("key1: val2")
+        conf1_fp = os.path.join(conf_dir, "conf1.yaml")
+        conf2_fp = os.path.join(conf_dir, "conf2.yaml")
+        write_yaml(conf1_fp, {"key1": "val1"})
+        write_yaml(conf2_fp, {"key1": "val2"})
 
         confr.init(
             conf_dir=conf_dir,
@@ -253,6 +251,45 @@ def test_conf_from_dir():
 
         )
         assert fn1() == "overwritten"
+
+
+def test_conf_from_dir_composed():
+    with TemporaryDirectory() as conf_dir:
+        base_fp = os.path.join(conf_dir, f"{confr.settings.BASE_CONF}.yaml")
+        shallow_fp = os.path.join(conf_dir, "shallow.yaml")
+        deep_fp = os.path.join(conf_dir, "deep.yaml")
+        write_yaml(base_fp, {"conf_key": 123, "neural_net": {"_file": "shallow.yaml", "this key": "is overridden"}})
+        write_yaml(shallow_fp, {"num_outputs": 10, "layer_sizes": [20]})
+        write_yaml(deep_fp, {"num_outputs": 10, "layer_sizes": [20, 15, 10, 15, 20]})
+
+        confr.init(
+            conf_dir=conf_dir,
+        )
+        conf = confr.to_dict()
+        print(conf)
+        assert conf == {
+            "conf_key": 123,
+            "neural_net": {"num_outputs": 10, "layer_sizes": [20]},
+        }
+
+        # TODO
+        # confr.init(
+        #     conf_dir=conf_dir,
+        #     overrides={"neural_net": {"_file": "deep", "this key": "is overridden"}} # nested dict
+        # )
+        # assert confr.to_dict() == {
+        #     "conf_key": 123,
+        #     "neural_net": {"num_outputs": 10, "layer_sizes": [20, 15, 10, 15, 20]},
+        # }
+
+        # confr.init(
+        #     conf_dir=conf_dir,
+        #     overrides={"neural_net._file": "deep.yaml"}, # dot notation
+        # )
+        # assert confr.to_dict() == {
+        #     "conf_key": 123,
+        #     "neural_net": {"num_outputs": 10, "layer_sizes": [20, 15, 10, 15, 20]},
+        # }
 
 
 def test_write_conf_file():
