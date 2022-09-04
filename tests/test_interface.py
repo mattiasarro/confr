@@ -1,5 +1,6 @@
 # %%
 import os
+from copy import deepcopy
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import confr
@@ -255,8 +256,6 @@ def test_conf_from_dir():
 
 
 def test_write_conf_file():
-    # TODO test writing singleton and python reference
-    # TODO test writing interpolation, interpolation to singleton
     with TemporaryDirectory() as tmp_dir:
         confr.init(conf={"key1": "val1"})
         confr.set("key2", "val2")
@@ -268,6 +267,43 @@ def test_write_conf_file():
 
         confr.write_conf_file(conf_fn, except_keys=["key1"])
         assert read_yaml(conf_fn) == {"key2": "val2"}
+
+        confr.set("key3", {"key4": "val4", "key5": "val5"})
+
+        confr.write_conf_file(conf_fn, except_keys=["key3.key4"])
+        assert read_yaml(conf_fn) == {"key1": "val1", "key2": "val2", "key3": {"key5": "val5"}}
+
+        confr.write_conf_file(conf_fn, except_keys=["key3.key4", "key3.key5"])
+        assert read_yaml(conf_fn) == {"key1": "val1", "key2": "val2", "key3": {}}
+
+
+def test_write_conf_file_with_interpolations():
+    with TemporaryDirectory() as tmp_dir:
+        conf = {
+            "encoder_fn": "@confr.test_imports.get_encoder",
+            "encoder": "@confr.test_imports.get_encoder()",
+            "encoder/num": 4,
+            "num": 3,
+            "k1": {"k2": "${encoder}"},
+            "my": {
+                "encoder": "@confr.test_imports.get_encoder()",
+                "encoder/num": 5,
+            },
+        }
+        conf_orig = deepcopy(conf)
+        confr.init(conf=conf)
+
+        # ensure singletons are initialised
+        get_model1()
+        get_model2()
+        confr.get("encoder_fn")
+        confr.get("encoder")
+        confr.get("k1.k2")
+        confr.get("my.encoder")
+
+        conf_fn = os.path.join(tmp_dir, "conf.yaml")
+        confr.write_conf_file(conf_fn)
+        assert read_yaml(conf_fn) == conf_orig
 
 
 # %%

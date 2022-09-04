@@ -2,7 +2,7 @@ import os
 import inspect
 
 from confr import settings
-from confr.utils import write_yaml, report_conf_init, read_yaml
+from confr.utils import write_yaml, report_conf_init, read_yaml, strip_keys
 from confr.models import Conf, ModifiedConf
 from collections import namedtuple
 
@@ -86,15 +86,7 @@ def modified_conf(**kwargs):
 
 
 def write_conf_file(fp, except_keys=[]):
-    ret = {}
-    for k, v in global_conf.to_dict().items():
-        if k not in except_keys:
-            original_val = global_conf.c_original[k]
-            if type(original_val) == str and original_val[0] in ["@", "$"]:
-                ret[k] = original_val
-            else:
-                ret[k] = v
-
+    ret = strip_keys(global_conf.to_dict(), except_keys=except_keys)
     write_yaml(fp, ret)
     print(f"Wrote configurations for: {list(ret.keys())}")
 

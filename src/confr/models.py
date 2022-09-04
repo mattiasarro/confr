@@ -83,7 +83,6 @@ class Conf:
             self._set_seed(verbose)
 
     def _init_conf_dict(self, conf_dict):
-        # TODO parse full config
         for k, v in conf_dict.items():
             self.set(k, v)
 
@@ -148,7 +147,7 @@ class Conf:
     def _init_python_object(self, k, module_path_and_var_name):
         overrides = {}
         if k is not None:
-            conf = self.to_dict()
+            conf = self.to_dict(include_singletons=True)
             if "." in k:
                 parts = k.split(".")
                 conf = _get(conf, ".".join(parts[:-1])) # get parent node of obj in conf
@@ -182,12 +181,15 @@ class Conf:
                     print(f"        value differs from existing conf ({self.c_original[arg_name]})")
                 self.c_original[arg_name] = arg_val
 
-    def to_dict(self):
+    def to_dict(self, include_singletons=False):
         """This implementation does not eagerly initialize singleton configs."""
         active_conf = {}
         active_conf.update(self.c_original)
-        active_conf.update(self.c_singletons)
+        if include_singletons:
+            # TODO recursive merge
+            active_conf.update(self.c_singletons)
         for overrides_dict in self.overrides_dicts.get():
+            # TODO recursive merge
             active_conf.update(overrides_dict)
         return active_conf
 

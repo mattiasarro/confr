@@ -37,3 +37,16 @@ def report_conf_init(c, verbose):
     else:
         if verbose:
             print("Redeclaring config.")
+
+
+def strip_keys(conf_dict, except_keys=[], key_prefix=None):
+    ret = {}
+    for k, v in conf_dict.items():
+        k_with_prefix = f"{key_prefix}.{k}" if key_prefix else k
+        print(k_with_prefix, except_keys)
+        if k_with_prefix not in except_keys:
+            if type(v) == dict:
+                v = strip_keys(v, except_keys=except_keys, key_prefix=k_with_prefix)
+            ret[k] = v
+
+    return ret
