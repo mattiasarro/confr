@@ -119,11 +119,11 @@ def override_from_cli(prefix):
         k_escaped = escape(k)
         parser.add_argument(f"{prefix}{k}", dest=k_escaped, default="__unset__")
 
-    args = parser.parse_args()
-    for k_escaped, v in vars(args).items():
-        if v != "__unset__":
-            k = unescape(k_escaped)
-            print(f"Overriding from CLI: {k} = {v}")
+    args = vars(parser.parse_args())
+    args = {unescape(k_escaped): v for k_escaped, v in args.items() if v != "__unset__"}
+    if args:
+        print(f"Overriding {len(args)} arguments from CLI.")
+        for k, v in args.items():
             set(k, v)
 
 

@@ -2,7 +2,7 @@ import os
 import aiocontextvars
 
 from confr.utils import import_python_object, read_yaml
-# TODO interpolations in overrides
+
 
 def _in(conf, k):
     for part in k.split("."):
@@ -22,7 +22,7 @@ def _get(conf, k):
 
 
 def _set(conf, k, v, strict=False):
-    if not _in(conf, k):
+    if _in(conf, k):
         if _get(conf, k) != v:
             msg = f"override {k} = {v} (formerly {_get(conf, k)})"
             if strict:
@@ -86,7 +86,9 @@ class Conf:
         if overrides:
             if verbose:
                 print(f"Overwriting {len(overrides)} configs with `overrides`")
-            self.add_overrides(overrides, verbose)
+            # Merging with actual conf (rather than using self.add_overrides)
+            # since these overrides are permanent (and self.add_overrides) is more limited.
+            self._init_conf_dict(overrides)
 
     def _init_conf_dict(self, conf_dict):
         for k, v in conf_dict.items():

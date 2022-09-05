@@ -57,6 +57,11 @@ def get_model2(model=confr.value("encoder")):
 
 
 @confr.bind
+def get_sth(sth=confr.value):
+    return sth
+
+
+@confr.bind
 class MyClass:
     def __init__(self, key1=confr.value):
         self.key1 = key1
@@ -201,10 +206,16 @@ def test_interpolation_singleton():
 
 
 def test_modified_conf():
-    confr.init(conf={"key1": "val1"})
+    conf = {
+        "key1": "val1",
+        "encoder": "@confr.test.imports.get_encoder()",
+        "encoder/num": 3,
+    }
+    confr.init(conf=conf)
     assert fn1() == "val1"
-    with confr.modified_conf(key1="val2"):
+    with confr.modified_conf(key1="val2", sth="${encoder}"):
         assert fn1() == "val2"
+        assert confr.get("sth").num == 3
     assert fn1() == "val1"
 
 

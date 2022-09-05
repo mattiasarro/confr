@@ -1,6 +1,7 @@
 import subprocess
 import ast
 
+
 def _cli(args, prefix="--"):
     cmd = ["python", "-m", "confr.test.cli"]
     for k, v in args.items():
