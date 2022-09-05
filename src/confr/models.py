@@ -88,9 +88,6 @@ class Conf:
                 print(f"Overwriting {len(overrides)} configs with `overrides`")
             self.add_overrides(overrides, verbose)
 
-        if _in(self.c_original, "seed"):
-            self._set_seed(verbose)
-
     def _init_conf_dict(self, conf_dict):
         for k, v in conf_dict.items():
             self.set(k, v)
@@ -204,20 +201,6 @@ class Conf:
             # TODO recursive merge
             active_conf.update(overrides_dict)
         return active_conf
-
-    def _set_seed(self, verbose=True):
-        # TODO remove
-
-        seed = self.get("seed")
-        if seed is not None:
-            if verbose:
-                print(f"Setting seed to {seed}")
-            import tensorflow as tf
-            import numpy as np
-            import random
-            np.random.seed(seed)
-            random.seed(seed)
-            tf.random.set_seed(seed)
 
 
 class ModifiedConf:
