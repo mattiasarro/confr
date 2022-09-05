@@ -5,6 +5,7 @@ from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import confr
 from confr.utils import read_yaml, write_yaml
+from confr.test import validations
 
 
 # mock functions #
@@ -290,6 +291,22 @@ def test_conf_from_dir_composed():
         #     "conf_key": 123,
         #     "neural_net": {"num_outputs": 10, "layer_sizes": [20, 15, 10, 15, 20]},
         # }
+
+
+def test_validation():
+    conf = {
+        "batch_size": 32,
+        "samples_per_batch": {
+            "labelled": 16,
+            "gen": {
+                "generator1": 8,
+                "generator2": 8,
+            }
+        }
+    }
+    confr.init(conf=conf, validate=validations)
+    confr.init(conf=conf, validate=[validations.validate_batch_size])
+    confr.init(conf=conf, validate=validations.validate_batch_size)
 
 
 def test_write_conf_file():

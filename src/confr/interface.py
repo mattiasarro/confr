@@ -3,7 +3,7 @@ import inspect
 
 from confr import settings
 from confr.utils import write_yaml, report_conf_init, read_yaml, strip_keys
-from confr.models import Conf, ModifiedConf, _follow_file_refs
+from confr.models import Conf, ModifiedConf
 from collections import namedtuple
 
 
@@ -80,6 +80,28 @@ def init(
         conf_dicts = [read_yaml(fp, verbose=verbose) for fp in fps]
         global_conf = Conf(conf_dicts, overrides=overrides, verbose=verbose)
         global_conf.follow_file_refs(conf_dir)
+
+    validate_conf(validate, verbose=verbose)
+
+
+def validate_conf(validable, verbose=False):
+    if validable is None:
+        return
+    elif inspect.ismodule(validable):
+        for k, v in validable.__dict__.items():
+            if callable(v):
+                if verbose:
+                    print(f"Validating {validable.__name__}.{k}.")
+                v()
+    elif type(validable) in [list, tuple]:
+        for v in validable:
+            validate_conf(v, verbose=verbose)
+    elif callable(validable):
+        if verbose:
+            print(f"Validating {validable.__name__}.")
+        validable()
+    else:
+        raise Exception(f"Unknown type {type(validable)} passed to validate_conf ({validable}).")
 
 
 def modified_conf(**kwargs):
