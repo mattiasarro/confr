@@ -1,8 +1,9 @@
 import os
 import inspect
+import argparse
 
 from confr import settings
-from confr.utils import write_yaml, report_conf_init, read_yaml, strip_keys
+from confr.utils import write_yaml, report_conf_init, read_yaml, strip_keys, flattened_items
 from confr.models import Conf, ModifiedConf
 from collections import namedtuple
 
@@ -54,6 +55,8 @@ def init(
     verbose=True,
     validate=None,
     conf_patches=(),
+    cli_overrides=True,
+    cli_overrides_prefix="--",
 ):
     global global_conf
     report_conf_init(global_conf, verbose)
@@ -79,9 +82,11 @@ def init(
         fps = [conf_files] if type(conf_files) == str else conf_files
         conf_dicts = [read_yaml(fp, verbose=verbose) for fp in fps]
         global_conf = Conf(conf_dicts, overrides=overrides, verbose=verbose)
-        global_conf.follow_file_refs(conf_dir)
 
     validate_conf(validate, verbose=verbose)
+    if cli_overrides:
+        override_from_cli(cli_overrides_prefix)
+    global_conf.follow_file_refs(conf_dir)
 
 
 def validate_conf(validable, verbose=False):
@@ -102,6 +107,24 @@ def validate_conf(validable, verbose=False):
         validable()
     else:
         raise Exception(f"Unknown type {type(validable)} passed to validate_conf ({validable}).")
+
+
+def override_from_cli(prefix):
+    escape = lambda s: s.replace(".", "___")
+    unescape = lambda s: s.replace("___", ".")
+
+    parser = argparse.ArgumentParser(allow_abbrev=False, description='Override confr values.')
+
+    for k, v in flattened_items(to_dict()):
+        k_escaped = escape(k)
+        parser.add_argument(f"{prefix}{k}", dest=k_escaped, default="__unset__")
+
+    args = parser.parse_args()
+    for k_escaped, v in vars(args).items():
+        if v != "__unset__":
+            k = unescape(k_escaped)
+            print(f"Overriding from CLI: {k} = {v}")
+            set(k, v)
 
 
 def modified_conf(**kwargs):

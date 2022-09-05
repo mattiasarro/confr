@@ -50,3 +50,13 @@ def strip_keys(conf_dict, except_keys=[], key_prefix=None):
             ret[k] = v
 
     return ret
+
+
+def flattened_items(conf_dict, prefix=None):
+    for k, v in conf_dict.items():
+        k = k if prefix is None else f"{prefix}.{k}"
+        if type(v) == dict:
+            for k2, v2 in flattened_items(v, prefix=k):
+                yield k2, v2
+        else:
+            yield k, v
