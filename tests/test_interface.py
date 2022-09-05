@@ -143,13 +143,13 @@ def test_value_custom_key_and_default():
 
 
 def test_python_reference():
-    confr.init(conf={"preprocessing_fn": "@confr.test_imports.my_fn"})
+    confr.init(conf={"preprocessing_fn": "@confr.test.imports.my_fn"})
     assert fn_python_reference() == 123
 
 
 def test_singleton():
     conf = {
-        "encoder": "@confr.test_imports.get_encoder()",
+        "encoder": "@confr.test.imports.get_encoder()",
         "encoder/num": 4,
         "num": 3,
     }
@@ -176,12 +176,12 @@ def test_interpolation():
 
 def test_interpolation_singleton():
     conf = {
-        "encoder": "@confr.test_imports.get_encoder()",
+        "encoder": "@confr.test.imports.get_encoder()",
         "encoder/num": 4,
         "num": 3,
         "k1": {"k2": "${encoder}"},
         "my": {
-            "encoder": "@confr.test_imports.get_encoder()",
+            "encoder": "@confr.test.imports.get_encoder()",
             "encoder/num": 5,
         },
     }
@@ -317,13 +317,13 @@ def test_write_conf_file():
 def test_write_conf_file_with_interpolations():
     with TemporaryDirectory() as tmp_dir:
         conf = {
-            "encoder_fn": "@confr.test_imports.get_encoder",
-            "encoder": "@confr.test_imports.get_encoder()",
+            "encoder_fn": "@confr.test.imports.get_encoder",
+            "encoder": "@confr.test.imports.get_encoder()",
             "encoder/num": 4,
             "num": 3,
             "k1": {"k2": "${encoder}"},
             "my": {
-                "encoder": "@confr.test_imports.get_encoder()",
+                "encoder": "@confr.test.imports.get_encoder()",
                 "encoder/num": 5,
             },
         }

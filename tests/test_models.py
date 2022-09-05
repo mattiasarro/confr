@@ -29,7 +29,7 @@ def test_set_dict():
 
 def test_is_interpolation():
     conf = {
-        "encoder": "@confr.test_imports.get_encoder()",
+        "encoder": "@confr.test.imports.get_encoder()",
         "encoder/num": 4,
         "num": 3,
         "k1": {"k2": "${encoder}"},
