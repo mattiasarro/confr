@@ -170,12 +170,12 @@ def test_singleton():
 def test_interpolation():
     conf = {
         "k1": "v1",
-        "k2": {"k21": "v21", "k22": "${k1}"},
+        "k2": {"k21": "v21", "k22": "${k1}", "k23": "${.k21}", "k24": "${..k1}"},
     }
     confr.init(conf=conf, cli_overrides=False)
 
     assert confr.get("k1") == "v1"
-    assert confr.get("k2") == {"k21": "v21", "k22": "v1"}
+    assert confr.get("k2") == {"k21": "v21", "k22": "v1", "k23": "v21", "k24": "v1"}
     assert confr.get("k2.k21") == "v21"
     assert confr.get("k2.k22") == "v1"
 

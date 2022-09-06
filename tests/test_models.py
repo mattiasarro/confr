@@ -1,4 +1,4 @@
-from confr.models import _in, _get, _set, _is_interpolation
+from confr.models import _in, _get, _set, _is_interpolation, _interpolated_key
 
 
 def test_in_dict():
@@ -43,3 +43,26 @@ def test_is_interpolation():
     assert _is_interpolation(conf, "k3")
     assert not _is_interpolation(conf, "k1.unknown")
     assert not _is_interpolation(conf, "unknown")
+
+
+def test_interpolated_key():
+    conf = {
+        "k1": "v1",
+        "k2": {
+            "k3": "v3",
+            "k4": {
+                "k5": "${..k3}", # => "v3"
+                "k6": "${...k10.k11}", # => "v11"
+                "k7": {
+                    "k8": "v8",
+                },
+            },
+            "k9": "${.k3}", # => "v3"
+        },
+        "k10": {
+            "k11": "v11",
+        },
+    }
+    assert _interpolated_key("k2.k9", "${.k3}") == "k2.k3"
+    assert _interpolated_key("k2.k4.k5", "${..k3}") == "k2.k3"
+    assert _interpolated_key("k2.k4.k6", "${...k10.k11}") == "k10.k11"

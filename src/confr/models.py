@@ -51,11 +51,19 @@ def _is_interpolation_val(val):
     return type(val) == str and val.startswith("${") and val.endswith("}")
 
 
-def _interpolated_key(orig_val):
+def _interpolated_key(k, orig_val):
     interpolated_key = orig_val[2:-1]
-    assert not interpolated_key.startswith("."), \
-        ("Relative interpolations are not yet supported.", orig_val, interpolated_key)
-    return interpolated_key
+    if interpolated_key.startswith("."):
+        for i, c in enumerate(interpolated_key):
+            if c != ".":
+                prefix = ".".join(k.split(".")[:-i]) # rm i trailing subkeys
+                suffix = interpolated_key[i:] # cut of leading dots
+                if prefix:
+                    return f"{prefix}.{suffix}"
+                else:
+                    return suffix
+    else:
+        return interpolated_key
 
 
 def _follow_file_refs(conf_dict, conf_dir):
@@ -125,12 +133,13 @@ class Conf:
         if type(orig_val) == str:
             if _is_interpolation_val(orig_val):
                 assert k is not None, "Not supported."
-                return self.get(_interpolated_key(orig_val))
+                return self.get(_interpolated_key(k, orig_val))
             elif k is not None and orig_val.startswith("@"):
-                if not _in(self.c_singletons, k):
+                if _in(self.c_singletons, k):
+                    return _get(self.c_singletons, k)
+                else:
                     # memoize the result
                     return _set(self.c_singletons, k, self._get_python_object(k, orig_val))
-                return _get(self.c_singletons, k)
             elif k is None and orig_val.startswith("@"):
                 # _get_val is called for a list element, therefore we can't memoize it
                 return self._get_python_object(None, orig_val)
