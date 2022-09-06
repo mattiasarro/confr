@@ -79,7 +79,7 @@ class MyClass:
 
 
 def test_conf_get_set():
-    confr.init(conf={"key1": "val1"})
+    confr.init(conf={"key1": "val1"}, cli_overrides=False)
     assert confr.get("key1") == fn1() == "val1", (fn1(), type(fn1()))
 
     confr.set("key1", "val2")
@@ -87,13 +87,13 @@ def test_conf_get_set():
 
 
 def test_bind_fn():
-    confr.init(conf={"key1": "val1"})
+    confr.init(conf={"key1": "val1"}, cli_overrides=False)
     assert fn1() == "val1"
     assert fn1(key1="val2") == "val2"
 
 
 def test_bind_class():
-    confr.init(conf={"key1": "val1", "key2": "val2"})
+    confr.init(conf={"key1": "val1", "key2": "val2"}, cli_overrides=False)
 
     o = MyClass(key1="val1")
     assert o.key1 == "val1"
@@ -107,7 +107,7 @@ def test_bind_class():
 
 
 def test_bind_fn_subkeys():
-    confr.init(conf={"key1": "val1", "nested": {"key1": "nested1"}})
+    confr.init(conf={"key1": "val1", "nested": {"key1": "nested1"}}, cli_overrides=False)
 
     assert fn1() == "val1"
     assert fn1(key1="val2") == "val2"
@@ -117,39 +117,39 @@ def test_bind_fn_subkeys():
 
 
 def test_value_custom_key():
-    confr.init(conf={"key1": "val1", "key2": "val2"})
+    confr.init(conf={"key1": "val1", "key2": "val2"}, cli_overrides=False)
     assert fn_custom_key() == "val2"
     assert fn_custom_key(key1="val3") == "val3"
 
 
 def test_value_custom_key_deep():
-    confr.init(conf={"key1": "val1", "key2": "val2", "k1": {"k2": {"k3": "v3"}}})
+    confr.init(conf={"key1": "val1", "key2": "val2", "k1": {"k2": {"k3": "v3"}}}, cli_overrides=False)
     assert fn_custom_key_deep() == "v3"
     assert fn_custom_key_deep(key1="val3") == "val3"
 
 
 def test_value_default():
-    confr.init(conf={"other_key": "other_val"}) # ensure we init from dict, rather than dir
+    confr.init(conf={"other_key": "other_val"}, cli_overrides=False) # ensure we init from dict, rather than dir
     assert fn_default() == "default"
 
-    confr.init(conf={"key1": "val1"})
+    confr.init(conf={"key1": "val1"}, cli_overrides=False)
     assert fn_default() == "val1"
 
 
 def test_value_custom_key_and_default():
-    confr.init(conf={"key1": "val1", "key2": "val2"})
+    confr.init(conf={"key1": "val1", "key2": "val2"}, cli_overrides=False)
     assert fn_custom_key_and_default() == "val2"
     assert fn_custom_key_and_default(key1="val3") == "val3"
 
-    confr.init(conf={"other_key": "other_val"}) # ensure we init from dict, rather than dir
+    confr.init(conf={"other_key": "other_val"}, cli_overrides=False) # ensure we init from dict, rather than dir
     assert fn_custom_key_and_default() == "default"
 
-    confr.init(conf={"key2": "val2"})
+    confr.init(conf={"key2": "val2"}, cli_overrides=False)
     assert fn_custom_key_and_default() == "val2"
 
 
 def test_python_reference():
-    confr.init(conf={"preprocessing_fn": "@confr.test.imports.my_fn"})
+    confr.init(conf={"preprocessing_fn": "@confr.test.imports.my_fn"}, cli_overrides=False)
     assert fn_python_reference() == 123
 
 
@@ -159,7 +159,7 @@ def test_singleton():
         "encoder/num": 4,
         "num": 3,
     }
-    confr.init(conf=conf)
+    confr.init(conf=conf, cli_overrides=False)
 
     my_model1 = get_model1()
     my_model2 = get_model1()
@@ -172,7 +172,7 @@ def test_interpolation():
         "k1": "v1",
         "k2": {"k21": "v21", "k22": "${k1}"},
     }
-    confr.init(conf=conf)
+    confr.init(conf=conf, cli_overrides=False)
 
     assert confr.get("k1") == "v1"
     assert confr.get("k2") == {"k21": "v21", "k22": "v1"}
@@ -191,7 +191,7 @@ def test_interpolation_singleton():
             "encoder/num": 5,
         },
     }
-    confr.init(conf=conf)
+    confr.init(conf=conf, cli_overrides=False)
 
     my_model1 = get_model1()
     my_model2 = get_model2()
@@ -211,7 +211,7 @@ def test_modified_conf():
         "encoder": "@confr.test.imports.get_encoder()",
         "encoder/num": 3,
     }
-    confr.init(conf=conf)
+    confr.init(conf=conf, cli_overrides=False)
     assert fn1() == "val1"
     with confr.modified_conf(key1="val2", sth="${encoder}"):
         assert fn1() == "val2"
@@ -224,7 +224,7 @@ def test_conf_from_files():
         f.write("key1: val1".encode("utf-8"))
         f.flush()
 
-        confr.init(conf_files=[f.name])
+        confr.init(conf_files=[f.name], cli_overrides=False)
         assert fn1() == "val1"
 
 
@@ -238,6 +238,7 @@ def test_conf_from_dir():
         confr.init(
             conf_dir=conf_dir,
             base_conf="conf1",
+            cli_overrides=False,
         )
         assert fn1() == "val1"
 
@@ -245,6 +246,7 @@ def test_conf_from_dir():
             conf_dir=conf_dir,
             base_conf="conf1",
             overrides={"key1": "overwritten"},
+            cli_overrides=False,
         )
         assert fn1() == "overwritten"
 
@@ -252,6 +254,7 @@ def test_conf_from_dir():
             conf_dir=conf_dir,
             base_conf="conf1",
             conf_patches=["conf2"],
+            cli_overrides=False,
         )
         assert fn1() == "val2"
 
@@ -260,7 +263,7 @@ def test_conf_from_dir():
             base_conf="conf1",
             conf_patches=["conf2"],
             overrides={"key1": "overwritten"},
-
+            cli_overrides=False,
         )
         assert fn1() == "overwritten"
 
@@ -274,9 +277,7 @@ def test_conf_from_dir_composed():
         write_yaml(shallow_fp, {"num_outputs": 10, "layer_sizes": [20]})
         write_yaml(deep_fp, {"num_outputs": 10, "layer_sizes": [20, 15, 10, 15, 20]})
 
-        confr.init(
-            conf_dir=conf_dir,
-        )
+        confr.init(conf_dir=conf_dir, cli_overrides=False)
         conf = confr.to_dict()
         print(conf)
         assert conf == {
@@ -315,14 +316,14 @@ def test_validation():
             }
         }
     }
-    confr.init(conf=conf, validate=validations)
-    confr.init(conf=conf, validate=[validations.validate_batch_size])
-    confr.init(conf=conf, validate=validations.validate_batch_size)
+    confr.init(conf=conf, validate=validations, cli_overrides=False)
+    confr.init(conf=conf, validate=[validations.validate_batch_size], cli_overrides=False)
+    confr.init(conf=conf, validate=validations.validate_batch_size, cli_overrides=False)
 
 
 def test_write_conf_file():
     with TemporaryDirectory() as tmp_dir:
-        confr.init(conf={"key1": "val1"})
+        confr.init(conf={"key1": "val1"}, cli_overrides=False)
         confr.set("key2", "val2")
 
         conf_fn = os.path.join(tmp_dir, "conf.yaml")
@@ -356,7 +357,7 @@ def test_write_conf_file_with_interpolations():
             },
         }
         conf_orig = deepcopy(conf)
-        confr.init(conf=conf)
+        confr.init(conf=conf, cli_overrides=False)
 
         # ensure singletons are initialised
         get_model1()
