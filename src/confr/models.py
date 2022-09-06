@@ -21,7 +21,9 @@ def _get(conf, k):
     return conf
 
 
-def _set(conf, k, v, strict=False):
+def _set(conf, k, v, strict=False, merge_mode="deep_merge"):
+    assert merge_mode in ["deep_merge", "override"]
+
     if _in(conf, k):
         if _get(conf, k) != v:
             msg = f"override {k} = {v} (formerly {_get(conf, k)})"
@@ -36,11 +38,27 @@ def _set(conf, k, v, strict=False):
             if part not in conf:
                 conf[part] = {}
             conf = conf[part]
-        conf[parts[-1]] = v
+        k = parts[-1]
+
+    if merge_mode == "deep_merge" and type(v) == dict and k in conf:
+        _deep_merge(conf, k, v)
     else:
         conf[k] = v
 
     return v
+
+
+def _deep_merge(conf, k, v):
+    t1 = type(conf[k])
+    t2 = type(v)
+    assert t1 == t2 == dict, \
+        f"Tried to merge two incompatible types ({t1}, {t2}) at {k} with values {conf[k]} and {v}."
+
+    for k2, v2 in v.items():
+        if type(v2) == dict:
+            _deep_merge(conf[k], k2, v2)
+        else:
+            conf[k][k2] = v2
 
 
 def _is_interpolation(conf, k):
@@ -79,10 +97,12 @@ class Conf:
         self,
         conf_dicts,
         overrides=None,
+        merge_mode="deep_merge", # deep_merge | override
         strict=False,
         verbose=True,
         ):
 
+        self.merge_mode = merge_mode
         self.strict = strict
         self.c_singletons = {}
         self.c_original = {}
@@ -120,8 +140,9 @@ class Conf:
             else:
                 return default
 
-    def set(self, k, v):
-        _set(self.c_original, k, v, strict=self.strict)
+    def set(self, k, v, merge_mode=None):
+        merge_mode = merge_mode if merge_mode else self.merge_mode
+        _set(self.c_original, k, v, strict=self.strict, merge_mode=merge_mode)
 
     def __getitem__(self, k):
         return self.get(k)

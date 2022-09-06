@@ -52,6 +52,7 @@ def init(
     conf_dir=settings.CONF_DIR,
     base_conf=settings.BASE_CONF,
     overrides=None,
+    merge_mode="deep_merge",
     verbose=True,
     validate=None,
     conf_patches=(),
@@ -63,13 +64,14 @@ def init(
 
     if conf:
         """Loads conf directly from conf dict."""
-        global_conf = Conf([conf], overrides=overrides, verbose=verbose)
+        conf_dicts = [conf] if type(conf) == dict else conf
+        global_conf = Conf(conf_dicts, overrides=overrides, merge_mode=merge_mode, verbose=verbose)
 
     elif conf_files:
         """Loads conf from conf files."""
         fps = [conf_files] if type(conf_files) == str else conf_files
         conf_dicts = [read_yaml(fp, verbose=verbose) for fp in fps]
-        global_conf = Conf(conf_dicts, overrides=overrides, verbose=verbose)
+        global_conf = Conf(conf_dicts, overrides=overrides, merge_mode=merge_mode, verbose=verbose)
 
     else:
         """Loads {conf_dir}/{base_conf}.yaml and all {conf_dir}/{conf_patch}.yaml files."""
@@ -81,7 +83,7 @@ def init(
 
         fps = [conf_files] if type(conf_files) == str else conf_files
         conf_dicts = [read_yaml(fp, verbose=verbose) for fp in fps]
-        global_conf = Conf(conf_dicts, overrides=overrides, verbose=verbose)
+        global_conf = Conf(conf_dicts, overrides=overrides, merge_mode=merge_mode, verbose=verbose)
 
     validate_conf(validate, verbose=verbose)
     if cli_overrides:

@@ -219,6 +219,87 @@ def test_modified_conf():
     assert fn1() == "val1"
 
 
+def test_init_deep_merge():
+    conf1 = {
+        "k1": "v1",
+        "k2": {
+            "k3": "v3",
+            "k4": {
+                "k5": "v5",
+                "k6": "v6",
+                "k7": {
+                    "k8": "v8",
+                },
+            },
+        },
+    }
+    conf2 = {
+        "k2": {
+            "k3": "v3_changed",
+            "k4": {
+                "k6": "v6_changed",
+                "k7": "v7",
+            },
+        },
+    }
+    conf3 = {"k2.k4.k6": "v6_changed2", "unknown": {"key": "val"}}
+    confr.init(conf=[conf1, conf2, conf3], cli_overrides=False)
+
+    d = confr.to_dict()
+    assert d == {
+        "k1": "v1",
+        "k2": {
+            "k3": "v3_changed",
+            "k4": {
+                "k5": "v5",
+                "k6": "v6_changed2",
+                "k7": "v7",
+            },
+        },
+        "unknown": {"key": "val"},
+    }, d
+
+
+def test_init_override():
+    conf1 = {
+        "k1": "v1",
+        "k2": {
+            "k3": "v3",
+            "k4": {
+                "k5": "v5",
+                "k6": "v6",
+                "k7": {
+                    "k8": "v8",
+                },
+            },
+        },
+    }
+    conf2 = {
+        "k2": {
+            "k3": "v3_changed",
+            "k4": {
+                "k6": "v6_changed",
+                "k7": "v7",
+            },
+        },
+    }
+    conf3 = {"k2.k4.k6": "v6_changed2", "unknown": {"key": "val"}}
+    confr.init(conf=[conf1, conf2, conf3], merge_mode="override", cli_overrides=False)
+
+    d = confr.to_dict()
+    assert d == {
+        "k1": "v1",
+        "k2": {
+            "k3": "v3_changed",
+            "k4": {
+                "k6": "v6_changed2",
+                "k7": "v7",
+            },
+        },
+        "unknown": {"key": "val"},
+    }, d
+
+
 def test_conf_from_files():
     with NamedTemporaryFile() as f:
         f.write("key1: val1".encode("utf-8"))

@@ -1,3 +1,4 @@
+from copy import deepcopy
 from confr.models import _in, _get, _set, _is_interpolation, _interpolated_key
 
 
@@ -25,6 +26,221 @@ def test_set_dict():
     assert d == {"k": "v", "k2": {}}
     _set(d, "k2.k3", "v3")
     assert d == {"k": "v", "k2": {"k3": "v3"}}
+
+
+def test_set_dict_override():
+    conf = {
+        "k1": "v1",
+        "k2": {
+            "k3": "v3",
+            "k4": {
+                "k5": "v5",
+                "k6": "v6",
+                "k7": {
+                    "k8": "v8",
+                },
+            },
+        },
+    }
+
+    # only nested dict
+
+    d = deepcopy(conf)
+    _set(d, "k2", {"k4": "v4"}, merge_mode="override")
+    assert d == {
+        "k1": "v1",
+        "k2": {"k4": "v4"},
+    }, d
+
+    d = deepcopy(conf)
+    _set(d, "k2", {"k4": {"k7": "v7"}}, merge_mode="override")
+    assert d == {
+        "k1": "v1",
+        "k2": {"k4": {"k7": "v7"}},
+    }, d
+
+    d = deepcopy(conf)
+    _set(d, "k2", {"k4": {"k7": {"k9": "v9"}}}, merge_mode="override")
+    assert d == {
+        "k1": "v1",
+        "k2": {"k4": {"k7": {"k9": "v9"}}},
+    }, d
+
+    # only dot notation, primitives at values (same behaviour as with deep_merge)
+
+    d = deepcopy(conf)
+    _set(d, "k2.k4", "v4", merge_mode="override")
+    assert d == {
+        "k1": "v1",
+        "k2": {
+            "k3": "v3",
+            "k4": "v4",
+        },
+    }, d
+
+    d = deepcopy(conf)
+    _set(d, "k2.k4.k7", "v7", merge_mode="override")
+    assert d == {
+        "k1": "v1",
+        "k2": {
+            "k3": "v3",
+            "k4": {
+                "k5": "v5",
+                "k6": "v6",
+                "k7": "v7",
+            },
+        },
+    }, d
+
+    d = deepcopy(conf)
+    _set(d, "k2.k4.k7.k9", "v9", merge_mode="override")
+    assert d == {
+        "k1": "v1",
+        "k2": {
+            "k3": "v3",
+            "k4": {
+                "k5": "v5",
+                "k6": "v6",
+                "k7": {
+                    "k8": "v8",
+                    "k9": "v9",
+                },
+            },
+        },
+    }, d
+
+    # dot notation, dicts as values
+
+    d = deepcopy(conf)
+    _set(d, "k2.k4", {"k10": "v10"}, merge_mode="override")
+    assert d == {
+        "k1": "v1",
+        "k2": {
+            "k3": "v3",
+            "k4": {"k10": "v10"},
+        },
+    }, d
+
+
+def test_set_dict_deep_merge():
+    conf = {
+        "k1": "v1",
+        "k2": {
+            "k3": "v3",
+            "k4": {
+                "k5": "v5",
+                "k6": "v6",
+                "k7": {
+                    "k8": "v8",
+                },
+            },
+        },
+    }
+
+    # only nested dict
+
+    d = deepcopy(conf)
+    _set(d, "k2", {"k4": "v4"}, merge_mode="deep_merge")
+    assert d == {
+        "k1": "v1",
+        "k2": {
+            "k3": "v3",
+            "k4": "v4",
+        },
+    }, d
+
+    d = deepcopy(conf)
+    _set(d, "k2", {"k4": {"k7": "v7"}}, merge_mode="deep_merge")
+    assert d == {
+        "k1": "v1",
+        "k2": {
+            "k3": "v3",
+            "k4": {
+                "k5": "v5",
+                "k6": "v6",
+                "k7": "v7",
+            },
+        },
+    }, d
+
+    d = deepcopy(conf)
+    _set(d, "k2", {"k4": {"k7": {"k9": "v9"}}}, merge_mode="deep_merge")
+    assert d == {
+        "k1": "v1",
+        "k2": {
+            "k3": "v3",
+            "k4": {
+                "k5": "v5",
+                "k6": "v6",
+                "k7": {
+                    "k8": "v8",
+                    "k9": "v9",
+                },
+            },
+        },
+    }, d
+
+    # only dot notation, primitives at values (same behaviour as with override)
+
+    d = deepcopy(conf)
+    _set(d, "k2.k4", "v4", merge_mode="deep_merge")
+    assert d == {
+        "k1": "v1",
+        "k2": {
+            "k3": "v3",
+            "k4": "v4",
+        },
+    }, d
+
+    d = deepcopy(conf)
+    _set(d, "k2.k4.k7", "v7", merge_mode="deep_merge")
+    assert d == {
+        "k1": "v1",
+        "k2": {
+            "k3": "v3",
+            "k4": {
+                "k5": "v5",
+                "k6": "v6",
+                "k7": "v7",
+            },
+        },
+    }, d
+
+    d = deepcopy(conf)
+    _set(d, "k2.k4.k7.k9", "v9", merge_mode="deep_merge")
+    assert d == {
+        "k1": "v1",
+        "k2": {
+            "k3": "v3",
+            "k4": {
+                "k5": "v5",
+                "k6": "v6",
+                "k7": {
+                    "k8": "v8",
+                    "k9": "v9",
+                },
+            },
+        },
+    }, d
+
+    # dot notation, dicts as values
+
+    d = deepcopy(conf)
+    _set(d, "k2.k4", {"k10": "v10"}, merge_mode="deep_merge")
+    assert d == {
+        "k1": "v1",
+        "k2": {
+            "k3": "v3",
+            "k4": {
+                "k5": "v5",
+                "k6": "v6",
+                "k7": {
+                    "k8": "v8",
+                },
+                "k10": "v10",
+            },
+        },
+    }, d
 
 
 def test_is_interpolation():
