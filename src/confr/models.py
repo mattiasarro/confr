@@ -87,7 +87,10 @@ def _interpolated_key(k, orig_val):
 def _follow_file_refs(conf_dict, conf_dir):
     for k, v in conf_dict.items():
         if type(v) == dict and "_file" in v:
-            conf_dict[k] = read_yaml(os.path.join(conf_dir, v["_file"]))
+            fn = v["_file"]
+            if "." not in fn:
+                fn += ".yaml"
+            conf_dict[k] = read_yaml(os.path.join(conf_dir, fn))
         if type(v) == dict:
             _follow_file_refs(v, conf_dir)
 
