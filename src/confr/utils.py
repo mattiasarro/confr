@@ -31,14 +31,6 @@ def write_yaml(fn, obj, verbose=True, do_print=False):
             print("---")
 
 
-def report_conf_init(c, verbose):
-    if c is None and verbose:
-        print("Declaring config.")
-    else:
-        if verbose:
-            print("Redeclaring config.")
-
-
 def strip_keys(conf_dict, except_keys=[], key_prefix=None):
     ret = {}
     for k, v in conf_dict.items():

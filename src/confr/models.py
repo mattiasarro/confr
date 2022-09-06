@@ -1,7 +1,9 @@
 import os
 import aiocontextvars
+import argparse
 
-from confr.utils import import_python_object, read_yaml
+from confr.utils import import_python_object, read_yaml, flattened_items
+from confr import settings
 
 
 def _in(conf, k):
@@ -98,14 +100,38 @@ def _follow_file_refs(conf_dict, conf_dir):
 class Conf:
     def __init__(
         self,
-        conf_dicts,
+        conf=None,
+        conf_files=None,
+        conf_dir=settings.CONF_DIR,
+        base_conf=settings.BASE_CONF,
         overrides=None,
-        merge_mode="deep_merge", # deep_merge | override
-        strict=False,
+        merge_mode="deep_merge",
         verbose=True,
-        ):
+        conf_patches=(),
+        strict=False,
+        cli_overrides=True,
+        cli_overrides_prefix="--",
+    ):
+
+        if conf:
+            """Loads conf directly from conf dict."""
+            conf_dicts = [conf] if type(conf) == dict else conf
+        elif conf_files:
+            """Loads conf from conf files."""
+            fps = [conf_files] if type(conf_files) == str else conf_files
+            conf_dicts = [read_yaml(fp, verbose=verbose) for fp in fps]
+        else:
+            """Loads {conf_dir}/{base_conf}.yaml and all {conf_dir}/{conf_patch}.yaml files."""
+            conf_files = [
+                os.path.join(conf_dir, base + ".yaml")
+                for base in ([base_conf] if base_conf else []) + list(conf_patches)
+            ]
+
+            fps = [conf_files] if type(conf_files) == str else conf_files
+            conf_dicts = [read_yaml(fp, verbose=verbose) for fp in fps]
 
         self.merge_mode = merge_mode
+        self.verbose = verbose
         self.strict = strict
         self.c_singletons = {}
         self.c_original = {}
@@ -121,9 +147,30 @@ class Conf:
             # since these overrides are permanent (and self.add_overrides) is more limited.
             self._init_conf_dict(overrides)
 
+        if cli_overrides:
+            self.override_from_cli(cli_overrides_prefix)
+        self.follow_file_refs(conf_dir)
+
     def _init_conf_dict(self, conf_dict):
         for k, v in conf_dict.items():
             self.set(k, v)
+
+    def override_from_cli(self, prefix):
+        escape = lambda s: s.replace(".", "___")
+        unescape = lambda s: s.replace("___", ".")
+
+        parser = argparse.ArgumentParser(allow_abbrev=False, description='Override confr values.')
+
+        for k, v in flattened_items(self.to_dict()):
+            k_escaped = escape(k)
+            parser.add_argument(f"{prefix}{k}", dest=k_escaped, default="__unset__")
+
+        args = vars(parser.parse_args())
+        args = {unescape(k_escaped): v for k_escaped, v in args.items() if v != "__unset__"}
+        if args:
+            print(f"Overriding {len(args)} arguments from CLI.")
+            for k, v in args.items():
+                self.set(k, v)
 
     def follow_file_refs(self, conf_dir):
         _follow_file_refs(self.c_original, conf_dir)

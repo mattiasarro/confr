@@ -1,9 +1,6 @@
-import os
 import inspect
-import argparse
 
-from confr import settings
-from confr.utils import write_yaml, report_conf_init, read_yaml, strip_keys, flattened_items
+from confr.utils import write_yaml, strip_keys
 from confr.models import Conf, ModifiedConf
 from collections import namedtuple
 
@@ -47,51 +44,24 @@ def value(key=None, default=None):
 
 
 def init(
-    conf=None,
-    conf_files=None,
-    conf_dir=settings.CONF_DIR,
-    base_conf=settings.BASE_CONF,
-    overrides=None,
-    merge_mode="deep_merge",
-    verbose=True,
+    *args,
     validate=None,
-    conf_patches=(),
-    cli_overrides=True,
-    cli_overrides_prefix="--",
+    verbose=True,
+    **kwargs,
 ):
+
     global global_conf
-    report_conf_init(global_conf, verbose)
-
-    if conf:
-        """Loads conf directly from conf dict."""
-        conf_dicts = [conf] if type(conf) == dict else conf
-        global_conf = Conf(conf_dicts, overrides=overrides, merge_mode=merge_mode, verbose=verbose)
-
-    elif conf_files:
-        """Loads conf from conf files."""
-        fps = [conf_files] if type(conf_files) == str else conf_files
-        conf_dicts = [read_yaml(fp, verbose=verbose) for fp in fps]
-        global_conf = Conf(conf_dicts, overrides=overrides, merge_mode=merge_mode, verbose=verbose)
-
+    if global_conf is None and verbose:
+        print("Declaring config.")
     else:
-        """Loads {conf_dir}/{base_conf}.yaml and all {conf_dir}/{conf_patch}.yaml files."""
+        if verbose:
+            print("Redeclaring config.")
 
-        conf_files = [
-            os.path.join(conf_dir, base + ".yaml")
-            for base in ([base_conf] if base_conf else []) + list(conf_patches)
-        ]
-
-        fps = [conf_files] if type(conf_files) == str else conf_files
-        conf_dicts = [read_yaml(fp, verbose=verbose) for fp in fps]
-        global_conf = Conf(conf_dicts, overrides=overrides, merge_mode=merge_mode, verbose=verbose)
-
-    validate_conf(validate, verbose=verbose)
-    if cli_overrides:
-        override_from_cli(cli_overrides_prefix)
-    global_conf.follow_file_refs(conf_dir)
+    global_conf = Conf(*args, **kwargs, verbose=verbose)
+    validate_conf(validate)
 
 
-def validate_conf(validable, verbose=False):
+def validate_conf(validable, verbose=True):
     if validable is None:
         return
     elif inspect.ismodule(validable):
@@ -102,31 +72,13 @@ def validate_conf(validable, verbose=False):
                 v()
     elif type(validable) in [list, tuple]:
         for v in validable:
-            validate_conf(v, verbose=verbose)
+            validate_conf(v)
     elif callable(validable):
         if verbose:
             print(f"Validating {validable.__name__}.")
         validable()
     else:
         raise Exception(f"Unknown type {type(validable)} passed to validate_conf ({validable}).")
-
-
-def override_from_cli(prefix):
-    escape = lambda s: s.replace(".", "___")
-    unescape = lambda s: s.replace("___", ".")
-
-    parser = argparse.ArgumentParser(allow_abbrev=False, description='Override confr values.')
-
-    for k, v in flattened_items(to_dict()):
-        k_escaped = escape(k)
-        parser.add_argument(f"{prefix}{k}", dest=k_escaped, default="__unset__")
-
-    args = vars(parser.parse_args())
-    args = {unescape(k_escaped): v for k_escaped, v in args.items() if v != "__unset__"}
-    if args:
-        print(f"Overriding {len(args)} arguments from CLI.")
-        for k, v in args.items():
-            set(k, v)
 
 
 def modified_conf(**kwargs):
