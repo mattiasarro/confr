@@ -366,24 +366,23 @@ def test_conf_from_dir_composed():
             "neural_net": {"num_outputs": 10, "layer_sizes": [20]},
         }
 
-        # TODO
-        # confr.init(
-        #     conf_dir=conf_dir,
-        #     overrides={"neural_net": {"_file": "deep", "this key": "is overridden"}} # nested dict
-        # )
-        # assert confr.to_dict() == {
-        #     "conf_key": 123,
-        #     "neural_net": {"num_outputs": 10, "layer_sizes": [20, 15, 10, 15, 20]},
-        # }
+        confr.init(
+            conf_dir=conf_dir,
+            overrides={"neural_net": {"_file": "deep.yaml", "this key": "is overridden"}} # nested dict
+        )
+        assert confr.to_dict() == {
+            "conf_key": 123,
+            "neural_net": {"num_outputs": 10, "layer_sizes": [20, 15, 10, 15, 20]},
+        }
 
-        # confr.init(
-        #     conf_dir=conf_dir,
-        #     overrides={"neural_net._file": "deep.yaml"}, # dot notation
-        # )
-        # assert confr.to_dict() == {
-        #     "conf_key": 123,
-        #     "neural_net": {"num_outputs": 10, "layer_sizes": [20, 15, 10, 15, 20]},
-        # }
+        confr.init(
+            conf_dir=conf_dir,
+            overrides={"neural_net._file": "deep.yaml"}, # dot notation
+        )
+        assert confr.to_dict() == {
+            "conf_key": 123,
+            "neural_net": {"num_outputs": 10, "layer_sizes": [20, 15, 10, 15, 20]},
+        }
 
 
 def test_validation():
