@@ -97,6 +97,14 @@ def _follow_file_refs(conf_dict, conf_dir):
             _follow_file_refs(v, conf_dir)
 
 
+def _deep_merge_dicts(dicts):
+    ret = {}
+    for d in dicts:
+        for k, v in d.items():
+            _set(ret, k, v, merge_mode="deep_merge")
+    return ret
+
+
 class Conf:
     def __init__(
         self,

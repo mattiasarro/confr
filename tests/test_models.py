@@ -1,5 +1,5 @@
 from copy import deepcopy
-from confr.models import _in, _get, _set, _is_interpolation, _interpolated_key
+from confr.models import _in, _get, _set, _is_interpolation, _interpolated_key, _deep_merge_dicts
 
 
 def test_in_dict():
@@ -282,3 +282,52 @@ def test_interpolated_key():
     assert _interpolated_key("k2.k9", "${.k3}") == "k2.k3"
     assert _interpolated_key("k2.k4.k5", "${..k3}") == "k2.k3"
     assert _interpolated_key("k2.k4.k6", "${...k10.k11}") == "k10.k11"
+
+
+def test_deep_merge_dicts():
+    d1 = {
+        "k1": "v1",
+    }
+    d2 = {
+        "k2": "v2",
+        "k4": {
+            "k5": "v5",
+        },
+        "k6": {
+            "k7": "v7",
+        },
+        "k8": {
+            "k9": "v9",
+        },
+        "k10": {
+            "k11": {
+                "k12": "v12",
+            },
+        },
+    }
+    d3 = {
+        "k3": "v3",
+        "k6": {
+            "k7": "v7_overridden",
+        },
+        "k8.k9": "v9_overridden",
+        "k10.k11": "v11",
+    }
+    ret = _deep_merge_dicts([d1, d2, d3])
+    assert ret == {
+        "k1": "v1",
+        "k2": "v2",
+        "k4": {
+            "k5": "v5",
+        },
+        "k6": {
+            "k7": "v7_overridden",
+        },
+        "k8": {
+            "k9": "v9_overridden",
+        },
+        "k3": "v3",
+        "k10": {
+            "k11": "v11",
+        },
+    }, ret
