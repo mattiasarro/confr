@@ -109,7 +109,7 @@ def test_types_loading_files():
                 "labelled": int,
                 "gen": {
                     "generator1": int,
-                    "generator2": "int", # this is a string due to loading from yaml
+                    "generator2": int,
                 },
             },
         }, types
@@ -171,8 +171,8 @@ def test_types_loading_file_refs():
         }, conf
         # "this key": "str" is kept in types, since we do deep merge of these
         assert types == {
-            "conf_key": "int",
-            "neural_net": {"num_outputs": "int", "layer_sizes": "list", "this key": "str"},
+            "conf_key": int,
+            "neural_net": {"num_outputs": int, "layer_sizes": list, "this key": str},
         }, types
 
         confr.init(
@@ -187,8 +187,8 @@ def test_types_loading_file_refs():
             "neural_net": {"num_outputs": 10, "layer_sizes": [20, 15, 10, 15, 20]},
         }, conf
         assert types == {
-            "conf_key": "int",
-            "neural_net": {"this key": "str"}, # deep_types.yaml does not exist
+            "conf_key": int,
+            "neural_net": {"this key": str}, # deep_types.yaml does not exist
         }, types
 
         confr.init(
@@ -203,8 +203,8 @@ def test_types_loading_file_refs():
             "neural_net": {"num_outputs": 10, "layer_sizes": [20, 15, 10, 15, 20]},
         }, conf
         assert types == {
-            "conf_key": "int",
-            "neural_net": {"this key": "str"}, # deep_types.yaml does not exist
+            "conf_key": int,
+            "neural_net": {"this key": str}, # deep_types.yaml does not exist
         }, types
 
         confr.init(
@@ -219,6 +219,6 @@ def test_types_loading_file_refs():
             "neural_net": {"k1": {"k2": "v2", "k3": {"k4": 4}}},
         }, conf
         assert types == {
-            "conf_key": "int",
-            "neural_net": {"this key": "str", "k1": {"k3": {"k4": "int"}}},
+            "conf_key": int,
+            "neural_net": {"this key": str, "k1": {"k3": {"k4": int}}},
         }, types

@@ -124,6 +124,21 @@ def _deep_merge_dicts(dicts):
     return ret
 
 
+def _leaves_to_primitives(d):
+    for k, v in d.items():
+        if v in settings.PRIMITIVE_TYPES:
+            continue
+        elif type(v) == dict:
+            _leaves_to_primitives(v)
+        elif type(v) in settings.PRIMITIVE_TYPES:
+            d[k] = settings.STR_TO_TYPE[v]
+        else:
+            raise Exception(
+                f"Expected value of {k} to be a primitive (in {settings.PRIMITIVE_TYPES}), "
+                f"but {v} is of type {type(v)}."
+            )
+
+
 class Conf:
     def __init__(
         self,
@@ -196,6 +211,7 @@ class Conf:
         loaded_conf_fps = self.follow_file_refs(conf_dir)
         merged_types_dicts = _load_types_dicts(loaded_conf_fps, verbose=self.verbose)
         self.types = _deep_merge_dicts(types_dicts + [merged_types_dicts])
+        _leaves_to_primitives(self.types)
 
     def _init_conf_dict(self, conf_dict):
         for k, v in conf_dict.items():
