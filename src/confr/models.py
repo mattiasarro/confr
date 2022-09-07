@@ -86,15 +86,32 @@ def _interpolated_key(k, orig_val):
         return interpolated_key
 
 
-def _follow_file_refs(conf_dict, conf_dir):
+def _follow_file_refs(conf_dict, conf_dir, prefix=None, verbose=True):
+    loaded_files = {}
     for k, v in conf_dict.items():
+        k_with_prefix = k if prefix is None else f"{prefix}.{k}"
+
         if type(v) == dict and "_file" in v:
             fn = v["_file"]
             if "." not in fn:
                 fn += ".yaml"
-            conf_dict[k] = read_yaml(os.path.join(conf_dir, fn))
+            conf_fp = os.path.join(conf_dir, fn)
+            conf_dict[k] = read_yaml(conf_fp, verbose=verbose)
+            loaded_files[k_with_prefix] = conf_fp
+
         if type(v) == dict:
-            _follow_file_refs(v, conf_dir)
+            loaded_files.update(_follow_file_refs(v, conf_dir, prefix=k_with_prefix))
+
+    return loaded_files
+
+
+def _load_types_dicts(loaded_conf_fps, verbose=True):
+    ret = {}
+    for k, conf_fp in loaded_conf_fps.items():
+        types_fp = conf_fp.replace(".yaml", "_types.yaml")
+        if os.path.exists(types_fp):
+            ret[k] = read_yaml(types_fp, verbose=verbose)
+    return ret
 
 
 def _deep_merge_dicts(dicts):
@@ -109,6 +126,7 @@ class Conf:
     def __init__(
         self,
         conf=None,
+        types=None,
         conf_files=None,
         conf_dir=settings.CONF_DIR,
         base_conf=settings.BASE_CONF,
@@ -121,29 +139,45 @@ class Conf:
         cli_overrides_prefix="--",
     ):
 
-        if conf:
-            """Loads conf directly from conf dict."""
-            conf_dicts = [conf] if type(conf) == dict else conf
-        elif conf_files:
-            """Loads conf from conf files."""
-            fps = [conf_files] if type(conf_files) == str else conf_files
-            conf_dicts = [read_yaml(fp, verbose=verbose) for fp in fps]
-        else:
-            """Loads {conf_dir}/{base_conf}.yaml and all {conf_dir}/{conf_patch}.yaml files."""
-            conf_files = [
-                os.path.join(conf_dir, base + ".yaml")
-                for base in ([base_conf] if base_conf else []) + list(conf_patches)
-            ]
-
-            fps = [conf_files] if type(conf_files) == str else conf_files
-            conf_dicts = [read_yaml(fp, verbose=verbose) for fp in fps]
-
         self.merge_mode = merge_mode
         self.verbose = verbose
         self.strict = strict
         self.c_singletons = {}
         self.c_original = {}
         self.overrides_dicts = aiocontextvars.ContextVar("overrides_dicts", default=[])
+
+        conf_dicts, types_dicts, fps = [], [], []
+
+        if conf:
+            """Loads conf directly from conf dict."""
+            if type(conf) == dict:
+                conf_dicts.append(conf)
+            elif type(conf) == list:
+                conf_dicts.extend(conf)
+            else:
+                raise Exception(f"Unknown conf type of {type(conf)}.")
+        elif conf_files:
+            """Loads conf from conf files."""
+            fps = [conf_files] if type(conf_files) == str else conf_files
+        else:
+            """Loads {conf_dir}/{base_conf}.yaml and all {conf_dir}/{conf_patch}.yaml files."""
+            fps = [
+                os.path.join(conf_dir, base + ".yaml")
+                for base in ([base_conf] if base_conf else []) + list(conf_patches)
+            ]
+
+        if types:
+            if type(types) == list:
+                types_dicts.extend(types)
+            else:
+                assert type(types) == dict
+                types_dicts.append(types)
+
+        for conf_fp in fps:
+            conf_dicts.append(read_yaml(conf_fp, verbose=verbose))
+            types_fp = conf_fp.replace(".yaml", "_types.yaml")
+            if os.path.exists(types_fp):
+                types_dicts.append(read_yaml(types_fp, verbose=verbose))
 
         for conf_dict in conf_dicts:
             self._init_conf_dict(conf_dict)
@@ -157,7 +191,9 @@ class Conf:
 
         if cli_overrides:
             self.override_from_cli(cli_overrides_prefix)
-        self.follow_file_refs(conf_dir)
+        loaded_conf_fps = self.follow_file_refs(conf_dir)
+        merged_types_dicts = _load_types_dicts(loaded_conf_fps, verbose=self.verbose)
+        self.types = _deep_merge_dicts(types_dicts + [merged_types_dicts])
 
     def _init_conf_dict(self, conf_dict):
         for k, v in conf_dict.items():
@@ -181,7 +217,7 @@ class Conf:
                 self.set(k, v)
 
     def follow_file_refs(self, conf_dir):
-        _follow_file_refs(self.c_original, conf_dir)
+        return _follow_file_refs(self.c_original, conf_dir, verbose=self.verbose)
 
     def get(self, k, default=None):
         for overrides_dict in self.overrides_dicts.get()[::-1]:
