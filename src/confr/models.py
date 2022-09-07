@@ -99,8 +99,10 @@ def _follow_file_refs(conf_dict, conf_dir, prefix=None, verbose=True):
             conf_dict[k] = read_yaml(conf_fp, verbose=verbose)
             loaded_files[k_with_prefix] = conf_fp
 
-        if type(v) == dict:
-            loaded_files.update(_follow_file_refs(v, conf_dir, prefix=k_with_prefix))
+        if type(conf_dict[k]) == dict:
+            loaded_files.update(
+                _follow_file_refs(conf_dict[k], conf_dir, prefix=k_with_prefix)
+            )
 
     return loaded_files
 

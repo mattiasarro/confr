@@ -353,35 +353,80 @@ def test_conf_from_dir_composed():
         base_fp = os.path.join(conf_dir, f"{confr.settings.BASE_CONF}.yaml")
         shallow_fp = os.path.join(conf_dir, "shallow.yaml")
         deep_fp = os.path.join(conf_dir, "deep.yaml")
-        write_yaml(base_fp, {"conf_key": 123, "neural_net": {"_file": "shallow.yaml", "this key": "is overridden"}})
-        write_yaml(shallow_fp, {"num_outputs": 10, "layer_sizes": [20]})
-        write_yaml(deep_fp, {"num_outputs": 10, "layer_sizes": [20, 15, 10, 15, 20]})
+        refs_fp = os.path.join(conf_dir, "refs.yaml")
+        v1_fp = os.path.join(conf_dir, "v1.yaml")
+        v4_fp = os.path.join(conf_dir, "v4.yaml")
+
+        write_yaml(
+            base_fp,
+            {
+                "conf_key": 123,
+                "neural_net": {
+                    "_file": "shallow.yaml",
+                    "this key": "is overridden",
+                },
+            },
+        )
+        write_yaml(
+            shallow_fp,
+            {"num_outputs": 10, "layer_sizes": [20]},
+        )
+        write_yaml(
+            deep_fp,
+            {"num_outputs": 10, "layer_sizes": [20, 15, 10, 15, 20]},
+        )
+        write_yaml(
+            refs_fp,
+            {"k1": {"_file": "v1.yaml"}},
+        )
+        write_yaml(
+            v1_fp,
+            {"k2": "v2", "k3": {"k4": {"_file": "v4.yaml"}}},
+        )
+        write_yaml(
+            v4_fp,
+            4,
+        )
 
         confr.init(conf_dir=conf_dir, cli_overrides=False)
         conf = confr.to_dict()
-        print(conf)
         assert conf == {
             "conf_key": 123,
             "neural_net": {"num_outputs": 10, "layer_sizes": [20]},
-        }
+        }, conf
 
         confr.init(
             conf_dir=conf_dir,
-            overrides={"neural_net": {"_file": "deep.yaml", "this key": "is overridden"}} # nested dict
+            overrides={"neural_net": {"_file": "deep.yaml", "this key": "is overridden"}}, # nested dict
+            cli_overrides=False,
         )
-        assert confr.to_dict() == {
+        conf = confr.to_dict()
+        assert conf == {
             "conf_key": 123,
             "neural_net": {"num_outputs": 10, "layer_sizes": [20, 15, 10, 15, 20]},
-        }
+        }, conf
 
         confr.init(
             conf_dir=conf_dir,
             overrides={"neural_net._file": "deep.yaml"}, # dot notation
+            cli_overrides=False,
         )
-        assert confr.to_dict() == {
+        conf = confr.to_dict()
+        assert conf == {
             "conf_key": 123,
             "neural_net": {"num_outputs": 10, "layer_sizes": [20, 15, 10, 15, 20]},
-        }
+        }, conf
+
+        confr.init(
+            conf_dir=conf_dir,
+            overrides={"neural_net._file": "refs.yaml"},
+            cli_overrides=False,
+        )
+        conf = confr.to_dict()
+        assert conf == {
+            "conf_key": 123,
+            "neural_net": {"k1": {"k2": "v2", "k3": {"k4": 4}}},
+        }, conf
 
 
 def test_write_conf_file():
