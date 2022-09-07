@@ -1,6 +1,8 @@
 import os
 from tempfile import TemporaryDirectory
 
+import pytest
+
 import confr
 from confr.test import validations
 from confr.utils import write_yaml
@@ -179,6 +181,7 @@ def test_types_loading_file_refs():
             conf_dir=conf_dir,
             overrides={"neural_net": {"_file": "deep.yaml", "this key": "is overridden"}}, # nested dict
             cli_overrides=False,
+            set_missing_types=False,
         )
         conf = confr.to_dict()
         types = confr.types()
@@ -195,6 +198,7 @@ def test_types_loading_file_refs():
             conf_dir=conf_dir,
             overrides={"neural_net._file": "deep.yaml"}, # dot notation
             cli_overrides=False,
+            set_missing_types=False,
         )
         conf = confr.to_dict()
         types = confr.types()
@@ -211,6 +215,7 @@ def test_types_loading_file_refs():
             conf_dir=conf_dir,
             overrides={"neural_net._file": "refs.yaml"},
             cli_overrides=False,
+            set_missing_types=False,
         )
         conf = confr.to_dict()
         types = confr.types()
@@ -222,3 +227,45 @@ def test_types_loading_file_refs():
             "conf_key": int,
             "neural_net": {"this key": str, "k1": {"k3": {"k4": int}}},
         }, types
+
+
+def test_validate_and_set_missing_types():
+    conf = {
+        "k1": "v1",
+        "k2": 2.0,
+        "k3": {"k4": 4},
+    }
+
+    types = {
+        "k1": str,
+        "k2": float,
+        "k3": {"k4": int},
+    }
+    confr.init(conf=conf, types=types, cli_overrides=False) # passes
+    types_out = confr.types()
+    assert types_out["k1"] == str
+    assert types_out["k2"] == float
+    assert types_out["k3"]["k4"] == int
+
+    types = {"k1": str}
+    confr.init(conf=conf, types=types, cli_overrides=False) # passes
+    types_out = confr.types()
+    assert types_out["k1"] == str
+    assert types_out["k2"] == float # imputed
+    assert types_out["k3"]["k4"] == int # imputed
+
+    with pytest.raises(Exception):
+        types = {"k1": int}
+        confr.init(conf=conf, types=types, cli_overrides=False)
+
+    with pytest.raises(Exception):
+        types = {"k3.k4": str}
+        confr.init(conf=conf, types=types, cli_overrides=False)
+
+    with pytest.raises(Exception):
+        types = {
+            "k1": int,
+            "k2": str,
+            "k3": {"k4": float},
+        }
+        confr.init(conf=conf, types=types, cli_overrides=False)

@@ -154,6 +154,8 @@ class Conf:
         strict=False,
         cli_overrides=True,
         cli_overrides_prefix="--",
+        validate_types=True,
+        set_missing_types=True,
     ):
 
         self.merge_mode = merge_mode
@@ -193,7 +195,7 @@ class Conf:
         for conf_fp in fps:
             conf_dicts.append(read_yaml(conf_fp, verbose=verbose))
             types_fp = conf_fp.replace(".yaml", "_types.yaml")
-            if os.path.exists(types_fp):
+            if os.path.exists(types_fp) and ".yaml" in conf_fp:
                 types_dicts.append(read_yaml(types_fp, verbose=verbose))
 
         for conf_dict in conf_dicts:
@@ -209,9 +211,15 @@ class Conf:
         if cli_overrides:
             self.override_from_cli(cli_overrides_prefix)
         loaded_conf_fps = self.follow_file_refs(conf_dir)
+
         merged_types_dicts = _load_types_dicts(loaded_conf_fps, verbose=self.verbose)
         self.types = _deep_merge_dicts(types_dicts + [merged_types_dicts])
         _leaves_to_primitives(self.types)
+
+        if validate_types:
+            self.validate_types()
+        if set_missing_types:
+            self.set_missing_types()
 
     def _init_conf_dict(self, conf_dict):
         for k, v in conf_dict.items():
@@ -345,6 +353,19 @@ class Conf:
             # TODO recursive merge
             active_conf.update(overrides_dict)
         return active_conf
+
+    def validate_types(self):
+        for k, expected_type in flattened_items(self.types):
+            if _in(self.c_original, k):
+                v = _get(self.c_original, k)
+                assert expected_type == type(v), \
+                    f"Expected {k} type to be {expected_type}, got {type(v)} for value {v}."
+
+    def set_missing_types(self):
+        for k, v in flattened_items(self.c_original):
+            if not _in(self.types, k):
+                assert type(v) in settings.PRIMITIVE_TYPES
+                _set(self.types, k, type(v))
 
 
 class ModifiedConf:

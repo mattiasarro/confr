@@ -64,7 +64,8 @@ def init(
 def validate_conf(validable, verbose=True):
     if validable is None:
         return
-    elif inspect.ismodule(validable):
+
+    if inspect.ismodule(validable):
         for k, v in validable.__dict__.items():
             if callable(v):
                 if verbose:
