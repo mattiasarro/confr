@@ -8,11 +8,12 @@ conf = {
             "k5": "v5",
             "k6": "v6",
             "k7": {
-                "k8": "v8",
+                "k8": 8,
             },
         },
     },
 }
-confr.init(conf=conf)
+types = {"k2.k4.k7.k8": int}
+confr.init(conf=conf, types=types)
 
 print(confr.to_dict())

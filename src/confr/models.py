@@ -208,8 +208,6 @@ class Conf:
             # since these overrides are permanent (and self.add_overrides) is more limited.
             self._init_conf_dict(overrides)
 
-        if cli_overrides:
-            self.override_from_cli(cli_overrides_prefix)
         loaded_conf_fps = self.follow_file_refs(conf_dir)
 
         merged_types_dicts = _load_types_dicts(loaded_conf_fps, verbose=self.verbose)
@@ -220,6 +218,8 @@ class Conf:
             self.validate_types()
         if set_missing_types:
             self.set_missing_types()
+        if cli_overrides:
+            self.override_from_cli(cli_overrides_prefix)
 
     def _init_conf_dict(self, conf_dict):
         for k, v in conf_dict.items():
@@ -232,11 +232,14 @@ class Conf:
         parser = argparse.ArgumentParser(allow_abbrev=False, description='Override confr values.')
 
         for k, v in flattened_items(self.to_dict()):
-            k_escaped = escape(k)
-            parser.add_argument(f"{prefix}{k}", dest=k_escaped, default="__unset__")
+            parser.add_argument(
+                f"{prefix}{k}",
+                dest=escape(k),
+                type=_get(self.types, k),
+            )
 
         args = vars(parser.parse_args())
-        args = {unescape(k_escaped): v for k_escaped, v in args.items() if v != "__unset__"}
+        args = {unescape(k_escaped): v for k_escaped, v in args.items() if v is not None}
         if args:
             print(f"Overriding {len(args)} arguments from CLI.")
             for k, v in args.items():
