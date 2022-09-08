@@ -30,3 +30,11 @@ def test_type_conversion():
 
     ret = _cli({"k2.k4.k7.k8": 9})
     assert ret["k2"]["k4"]["k7"]["k8"] == 9
+
+
+def test_file_refs():
+    ret = _cli()
+    assert ret["k9"] == "ref1_contents"
+
+    ret = _cli({"k9._file": "ref2.yaml"})
+    assert ret["k9"] == "ref2_contents"

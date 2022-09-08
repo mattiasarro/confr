@@ -208,6 +208,8 @@ class Conf:
             # since these overrides are permanent (and self.add_overrides) is more limited.
             self._init_conf_dict(overrides)
 
+        if cli_overrides:
+            self.override_from_cli(cli_overrides_prefix, file_refs_only=True)
         loaded_conf_fps = self.follow_file_refs(conf_dir)
 
         merged_types_dicts = _load_types_dicts(loaded_conf_fps, verbose=self.verbose)
@@ -225,20 +227,20 @@ class Conf:
         for k, v in conf_dict.items():
             self.set(k, v)
 
-    def override_from_cli(self, prefix):
+    def override_from_cli(self, prefix, file_refs_only=False):
         escape = lambda s: s.replace(".", "___")
         unescape = lambda s: s.replace("___", ".")
 
         parser = argparse.ArgumentParser(allow_abbrev=False, description='Override confr values.')
 
         for k, v in flattened_items(self.to_dict()):
-            parser.add_argument(
-                f"{prefix}{k}",
-                dest=escape(k),
-                type=_get(self.types, k),
-            )
+            if file_refs_only:
+                if k.endswith("_file"):
+                    parser.add_argument(f"{prefix}{k}", dest=escape(k))
+            else:
+                parser.add_argument(f"{prefix}{k}", dest=escape(k), type=_get(self.types, k))
 
-        args = vars(parser.parse_args())
+        args = vars(parser.parse_known_args()[0])
         args = {unescape(k_escaped): v for k_escaped, v in args.items() if v is not None}
         if args:
             print(f"Overriding {len(args)} arguments from CLI.")

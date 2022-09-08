@@ -12,8 +12,9 @@ conf = {
             },
         },
     },
+    "k9": {"_file": "ref1.yaml"},
 }
 types = {"k2.k4.k7.k8": int}
-confr.init(conf=conf, types=types)
+confr.init(conf=conf, types=types, conf_dir="tests/config")
 
 print(confr.to_dict())
