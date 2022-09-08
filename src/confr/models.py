@@ -222,14 +222,15 @@ class Conf:
             self.set_missing_types()
         if cli_overrides:
             self.override_from_cli(cli_overrides_prefix)
+        self.maybe_override_plx()
 
     def _init_conf_dict(self, conf_dict):
         for k, v in conf_dict.items():
             self.set(k, v)
 
     def override_from_cli(self, prefix, file_refs_only=False):
-        escape = lambda s: s.replace(".", "___")
-        unescape = lambda s: s.replace("___", ".")
+        escape = lambda s: s.replace(".", settings.CLI_DOT_REPLACEMENT)
+        unescape = lambda s: s.replace(settings.CLI_DOT_REPLACEMENT, ".")
 
         parser = argparse.ArgumentParser(allow_abbrev=False, description='Override confr values.')
 
@@ -371,6 +372,26 @@ class Conf:
             if not _in(self.types, k):
                 assert type(v) in settings.PRIMITIVE_TYPES
                 _set(self.types, k, type(v))
+
+    def maybe_override_plx(self):
+        try:
+            from polyaxon.client import RunClient
+            print("Overriding arguments from Polyaxon.")
+        except ModuleNotFoundError:
+            return
+
+        try:
+            run_client = RunClient()
+            run_client.refresh_data()
+        except:
+            print("Could not initialise RunClient. Polyaxon configured?")
+            return
+
+        for k, v in run_client.get_inputs().items():
+            k = k.replace(settings.PLX_DOT_REPLACEMENT, ".")
+            v = None if v == "" else v
+            if _in(self.c_original, k):
+                self.set(k, v)
 
 
 class ModifiedConf:

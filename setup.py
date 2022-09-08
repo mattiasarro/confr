@@ -26,5 +26,8 @@ setuptools.setup(
     install_requires=[
         "aiocontextvars>=0.2.2",
         "pyyaml",
-    ]
+    ],
+    extras_require={
+        "polyaxon": ["polyaxon"],
+    },
 )
