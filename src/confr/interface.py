@@ -92,8 +92,12 @@ def write_conf_file(fp, except_keys=[]):
     print(f"Wrote configurations for: {list(ret.keys())}")
 
 
-def to_dict():
-    return global_conf.to_dict()
+def to_dict(*limit_keys):
+    ret = global_conf.to_dict()
+    if limit_keys:
+        return {k: ret[k] for k in limit_keys}
+    else:
+        return ret
 
 
 def types():
