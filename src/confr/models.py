@@ -149,8 +149,8 @@ class Conf:
         base_conf=settings.BASE_CONF,
         overrides=None,
         merge_mode="deep_merge",
-        verbose=True,
         conf_patches=(),
+        verbose=True,
         strict=False,
         cli_overrides=True,
         cli_overrides_prefix="--",
@@ -159,6 +159,7 @@ class Conf:
     ):
 
         self.merge_mode = merge_mode
+        self.conf_patches = conf_patches
         self.verbose = verbose
         self.strict = strict
         self.c_singletons = {}

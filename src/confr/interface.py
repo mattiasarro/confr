@@ -104,6 +104,10 @@ def types():
     return global_conf.types
 
 
+def conf_patches():
+    return global_conf.conf_patches
+
+
 def _get_call_overrides(cls_or_fn, args, kwargs, subkeys):
     try:
         bound_args = inspect.signature(cls_or_fn).bind(*args, **kwargs)
