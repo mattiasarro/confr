@@ -242,5 +242,5 @@ confr.get("key2") # returns "val2"
 You can also save the current active configuration as a yaml file. We do this at the end of training, for example, since the conf file will need to be loaded when we re-initialize the model for inference.
 
 ```python
-confr.write_conf_file("my_active__base.yaml)
+confr.write_conf("my_active__base.yaml)
 ```

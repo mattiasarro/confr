@@ -200,7 +200,7 @@ confr.get("key2") # returns "val2"
 
 # %% c15
 
-confr.write_conf_file("my_active_conf.yaml)
+confr.write_conf("my_active_conf.yaml)
 
 # %% c16
 

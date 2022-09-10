@@ -86,7 +86,7 @@ def modified_conf(**kwargs):
     return ModifiedConf(global_conf, **kwargs)
 
 
-def write_conf_file(fp, except_keys=[]):
+def write_conf(fp, except_keys=[]):
     ret = strip_keys(global_conf.to_dict(), except_keys=except_keys)
     write_yaml(fp, ret)
     print(f"Wrote configurations for: {list(ret.keys())}")

@@ -429,29 +429,29 @@ def test_conf_from_dir_composed():
         }, conf
 
 
-def test_write_conf_file():
+def test_write_conf():
     with TemporaryDirectory() as tmp_dir:
         confr.init(conf={"key1": "val1"}, cli_overrides=False)
         confr.set("key2", "val2")
 
         conf_fn = os.path.join(tmp_dir, "conf.yaml")
 
-        confr.write_conf_file(conf_fn)
+        confr.write_conf(conf_fn)
         assert read_yaml(conf_fn) == {"key1": "val1", "key2": "val2"}
 
-        confr.write_conf_file(conf_fn, except_keys=["key1"])
+        confr.write_conf(conf_fn, except_keys=["key1"])
         assert read_yaml(conf_fn) == {"key2": "val2"}
 
         confr.set("key3", {"key4": "val4", "key5": "val5"})
 
-        confr.write_conf_file(conf_fn, except_keys=["key3.key4"])
+        confr.write_conf(conf_fn, except_keys=["key3.key4"])
         assert read_yaml(conf_fn) == {"key1": "val1", "key2": "val2", "key3": {"key5": "val5"}}
 
-        confr.write_conf_file(conf_fn, except_keys=["key3.key4", "key3.key5"])
+        confr.write_conf(conf_fn, except_keys=["key3.key4", "key3.key5"])
         assert read_yaml(conf_fn) == {"key1": "val1", "key2": "val2", "key3": {}}
 
 
-def test_write_conf_file_with_interpolations():
+def test_write_conf_with_interpolations():
     with TemporaryDirectory() as tmp_dir:
         conf = {
             "encoder_fn": "@confr.test.imports.get_encoder",
@@ -476,7 +476,7 @@ def test_write_conf_file_with_interpolations():
         confr.get("my.encoder")
 
         conf_fn = os.path.join(tmp_dir, "conf.yaml")
-        confr.write_conf_file(conf_fn)
+        confr.write_conf(conf_fn)
         assert read_yaml(conf_fn) == conf_orig
 
 
