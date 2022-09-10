@@ -158,14 +158,14 @@ class Conf:
         set_missing_types=True,
     ):
 
+        self._plx_inputs = None
         self.merge_mode = merge_mode
-        self.conf_patches = conf_patches
+        self.conf_patches = tuple(conf_patches) + self.conf_patches_overrides()
         self.verbose = verbose
         self.strict = strict
         self.c_singletons = {}
         self.c_original = {}
         self.overrides_dicts = aiocontextvars.ContextVar("overrides_dicts", default=[])
-        self._plx_inputs = None
 
         conf_dicts, types_dicts, fps = [], [], []
 
@@ -381,6 +381,10 @@ class Conf:
             v = None if v == "" else v
             if _in(self.c_original, k):
                 self.set(k, v)
+
+    def conf_patches_overrides(self):
+        # Can add overrides from other systems than plx here as well.
+        return self.plx_inputs.get("conf_patches", tuple())
 
     @property
     def plx_inputs(self):
