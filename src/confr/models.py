@@ -165,6 +165,7 @@ class Conf:
         self.c_singletons = {}
         self.c_original = {}
         self.overrides_dicts = aiocontextvars.ContextVar("overrides_dicts", default=[])
+        self._plx_inputs = None
 
         conf_dicts, types_dicts, fps = [], [], []
 
@@ -375,24 +376,34 @@ class Conf:
                 _set(self.types, k, type(v))
 
     def maybe_override_plx(self):
+        for k, v in self.plx_inputs.items():
+            k = k.replace(settings.PLX_DOT_REPLACEMENT, ".")
+            v = None if v == "" else v
+            if _in(self.c_original, k):
+                self.set(k, v)
+
+    @property
+    def plx_inputs(self):
+        if self._plx_inputs is not None:
+            return self._plx_inputs # memoized
+
         try:
             from polyaxon.client import RunClient
             print("Overriding arguments from Polyaxon.")
         except ModuleNotFoundError:
-            return
+            self._plx_inputs = {}
+            return self._plx_inputs
 
         try:
             run_client = RunClient()
             run_client.refresh_data()
         except:
             print("Could not initialise RunClient. Polyaxon configured?")
-            return
+            self._plx_inputs = {}
+            return self._plx_inputs
 
-        for k, v in run_client.get_inputs().items():
-            k = k.replace(settings.PLX_DOT_REPLACEMENT, ".")
-            v = None if v == "" else v
-            if _in(self.c_original, k):
-                self.set(k, v)
+        self._plx_inputs = run_client.get_inputs()
+        return self._plx_inputs
 
 
 class ModifiedConf:
