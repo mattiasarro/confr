@@ -1,7 +1,8 @@
 import inspect
 
+from confr import settings
 from confr.utils import write_yaml, strip_keys
-from confr.models import Conf, ModifiedConf
+from confr.models import Conf, ModifiedConf, _plx_inputs, _get_cli_arg
 from collections import namedtuple
 
 
@@ -15,6 +16,21 @@ def get(k, default=None):
 
 def set(k, v):
     return global_conf.set(k, v)
+
+
+def get_input(k, default=None):
+    cli_arg1 = _get_cli_arg(f"-{k}")
+    cli_arg2 = _get_cli_arg(f"--{k}")
+    plx_arg = _plx_inputs().get(k.replace(".", settings.PLX_DOT_REPLACEMENT))
+
+    if cli_arg1 is not None:
+        return cli_arg1
+    elif cli_arg2 is not None:
+        return cli_arg2
+    elif plx_arg is not None:
+        return plx_arg
+    else:
+        return default
 
 
 def bind(*args, subkeys=None):
