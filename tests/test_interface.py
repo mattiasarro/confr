@@ -210,12 +210,43 @@ def test_modified_conf():
         "encoder": "@confr.test.imports.get_encoder()",
         "encoder/num": 3,
     }
+
     confr.init(conf=conf, cli_overrides=False)
     assert fn1() == "val1"
-    with confr.modified_conf(key1="val2", sth="${encoder}"):
+    assert confr.get("encoder").num == 3
+
+    with confr.modified_conf(key1="val2", sth="${encoder}", overrides={"encoder/num": 4}):
         assert fn1() == "val2"
+        # Here, `sth` points to `encoder`, which had been initialised earlier and memoized.
+        # Therefore, encoder does not get re-initialised with num=4.
+        # TODO add a warning or exception when such overrides are attempted.
         assert confr.get("sth").num == 3
+
     assert fn1() == "val1"
+
+
+def test_conf_context():
+    conf1 = {
+        "key1": "val1",
+        "encoder": "@confr.test.imports.get_encoder()",
+        "encoder/num": 3,
+    }
+    conf2 = {
+        "key1": "val2",
+        "encoder": "@confr.test.imports.get_encoder()",
+        "encoder/num": 4,
+    }
+
+    confr.init(conf=conf1, cli_overrides=False)
+    assert fn1() == "val1"
+    assert confr.get("encoder").num == 3
+
+    with confr.init(conf=conf2, cli_overrides=False, ctx=True):
+        assert fn1() == "val2"
+        assert confr.get("encoder").num == 4
+
+    assert fn1() == "val1"
+    assert confr.get("encoder").num == 3
 
 
 def test_init_deep_merge():

@@ -47,6 +47,7 @@ def init(
     *args,
     validate=None,
     verbose=True,
+    ctx=False, # if True, conf will be active only during the `with`` block
     **kwargs,
 ):
 
@@ -57,8 +58,13 @@ def init(
         if verbose:
             print("Redeclaring config.")
 
-    global_conf = Conf(*args, **kwargs, verbose=verbose)
-    validate_conf(validate)
+    conf = Conf(*args, **kwargs, verbose=verbose)
+
+    if ctx:
+        return ConfContext(global_conf, conf, validate)
+    else:
+        global_conf = conf
+        validate_conf(validate)
 
 
 def validate_conf(validable, verbose=True):
@@ -140,3 +146,19 @@ def _get_call_overrides(cls_or_fn, args, kwargs, subkeys):
     except:
         print(f"Trying to assign configurations to {cls_or_fn.__name__}")
         raise
+
+
+class ConfContext:
+    def __init__(self, old_conf, swapped_conf, validate):
+        self.old_conf = old_conf
+        self.swapped_conf = swapped_conf
+        self.validate = validate
+
+    def __enter__(self):
+        global global_conf
+        global_conf = self.swapped_conf
+        validate_conf(self.validate)
+
+    def __exit__(self, *args):
+        global global_conf
+        global_conf = self.old_conf
