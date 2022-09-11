@@ -384,7 +384,13 @@ class Conf:
 
     def conf_patches_overrides(self):
         # Can add overrides from other systems than plx here as well.
-        return self.plx_inputs.get("conf_patches", tuple())
+        plx_conf_patches = self.plx_inputs.get("conf_patches", tuple())
+
+        parser = argparse.ArgumentParser(allow_abbrev=False, description='Confr conf patch parser.')
+        parser.add_argument("-c", dest="conf_patch", action="append")
+        cli_conf_patches = parser.parse_known_args()[0].conf_patches
+
+        return plx_conf_patches + cli_conf_patches
 
     @property
     def plx_inputs(self):
