@@ -139,6 +139,30 @@ def _leaves_to_primitives(d):
             )
 
 
+def _plx_inputs():
+    try:
+        from polyaxon.client import RunClient
+        print("Overriding arguments from Polyaxon.")
+    except ModuleNotFoundError:
+        return {}
+
+    try:
+        run_client = RunClient()
+        run_client.refresh_data()
+    except:
+        print("Could not initialise RunClient. Polyaxon configured?")
+        return {}
+
+    return run_client.get_inputs()
+
+
+def _get_cli_arg(arg_name, **kwargs):
+    arg_name_sane = arg_name.replace("-", "")
+    parser = argparse.ArgumentParser(allow_abbrev=False)
+    parser.add_argument(arg_name, dest=arg_name_sane, **kwargs)
+    return getattr(parser.parse_known_args()[0], arg_name_sane)
+
+
 class Conf:
     def __init__(
         self,
@@ -385,34 +409,13 @@ class Conf:
     def conf_patches_overrides(self):
         # Can add overrides from other systems than plx here as well.
         plx_conf_patches = self.plx_inputs.get("conf_patches", tuple())
-
-        parser = argparse.ArgumentParser(allow_abbrev=False, description='Confr conf patch parser.')
-        parser.add_argument("-c", dest="conf_patch", action="append")
-        cli_conf_patches = parser.parse_known_args()[0].conf_patches
-
+        cli_conf_patches = _get_cli_arg("-c", action="append") or tuple()
         return plx_conf_patches + cli_conf_patches
 
     @property
     def plx_inputs(self):
-        if self._plx_inputs is not None:
-            return self._plx_inputs # memoized
-
-        try:
-            from polyaxon.client import RunClient
-            print("Overriding arguments from Polyaxon.")
-        except ModuleNotFoundError:
-            self._plx_inputs = {}
-            return self._plx_inputs
-
-        try:
-            run_client = RunClient()
-            run_client.refresh_data()
-        except:
-            print("Could not initialise RunClient. Polyaxon configured?")
-            self._plx_inputs = {}
-            return self._plx_inputs
-
-        self._plx_inputs = run_client.get_inputs()
+        if self._plx_inputs is None:
+            self._plx_inputs = _plx_inputs()
         return self._plx_inputs
 
 
