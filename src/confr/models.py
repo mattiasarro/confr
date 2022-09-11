@@ -140,20 +140,20 @@ def _leaves_to_primitives(d):
 
 
 def _plx_inputs():
-    try:
+    if settings.IN_POLYAXON:
+        print(f"Overriding arguments from Polyaxon since IN_POLYAXON={settings.IN_POLYAXON}.")
         from polyaxon.client import RunClient
-        print("Overriding arguments from Polyaxon.")
-    except ModuleNotFoundError:
-        return {}
 
-    try:
-        run_client = RunClient()
-        run_client.refresh_data()
-    except:
-        print("Could not initialise RunClient. Polyaxon configured?")
-        return {}
+        try:
+            run_client = RunClient()
+            run_client.refresh_data()
+        except:
+            print("Could not initialise RunClient. Polyaxon configured?")
+            return {}
+        return run_client.get_inputs()
 
-    return run_client.get_inputs()
+    else:
+        return {}
 
 
 def _get_cli_arg(arg_name, **kwargs):
