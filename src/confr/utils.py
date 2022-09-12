@@ -1,5 +1,6 @@
 import sys
 import importlib
+import re
 import yaml
 from yaml import CSafeDumper
 
@@ -64,3 +65,15 @@ def flattened_items(conf_dict, prefix=None):
                 yield k2, v2
         else:
             yield k, v
+
+
+def interpolate_key(k, conf):
+    if k:
+        regex = r"\$\{(.*?)\}"
+        for match in re.finditer(regex, k, re.DOTALL):
+            outer = match.group(0) # e.g. ${key.subkey}
+            inner = match.group(1) # e.g. key.subkey
+            interpolated = conf.get(inner)
+            assert type(interpolated) == str
+            k = k.replace(outer, interpolated)
+    return k

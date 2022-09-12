@@ -1,7 +1,7 @@
 import inspect
 
 from confr import settings
-from confr.utils import write_yaml, strip_keys, with_keys
+from confr.utils import write_yaml, strip_keys, with_keys, interpolate_key
 from confr.models import Conf, ModifiedConf, _plx_inputs, _get_cli_arg
 from collections import namedtuple
 
@@ -139,6 +139,8 @@ def _get_call_overrides(cls_or_fn, args, kwargs, subkeys):
     default_args = dict(bound_args.arguments)
 
     assert global_conf is not None, "Need to initialize config before executing configurable functions."
+
+    subkeys = interpolate_key(subkeys, global_conf)
     try:
         ret = {}
         for k, v in default_args.items():
@@ -154,6 +156,7 @@ def _get_call_overrides(cls_or_fn, args, kwargs, subkeys):
                         get_key = subkeys + v.key if subkeys else v.key # path is potentially relative to subkey
                     else:
                         get_key = v.key # path is absolute
+                    get_key = interpolate_key(get_key, global_conf)
                     get_default = v.default
             else: # non-configurable value, e.g. kwarg=123
                 continue
