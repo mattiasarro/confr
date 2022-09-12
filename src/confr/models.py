@@ -208,7 +208,7 @@ class Conf:
             """Loads {conf_dir}/{base_conf}.yaml and all {conf_dir}/{conf_patch}.yaml files."""
             fps = [
                 os.path.join(conf_dir, base + ".yaml")
-                for base in ([base_conf] if base_conf else []) + list(conf_patches)
+                for base in ((base_conf,) if base_conf else tuple()) + self.conf_patches
             ]
 
         if types:
@@ -396,7 +396,8 @@ class Conf:
     def set_missing_types(self):
         for k, v in flattened_items(self.c_original):
             if not _in(self.types, k):
-                assert type(v) in settings.PRIMITIVE_TYPES
+                assert type(v) in settings.PRIMITIVE_TYPES, \
+                    f"{type(v)} not in settings.PRIMITIVE_TYPES ({settings.PRIMITIVE_TYPES})"
                 _set(self.types, k, type(v))
 
     def maybe_override_plx(self):
@@ -410,7 +411,7 @@ class Conf:
         # Can add overrides from other systems than plx here as well.
         plx_conf_patches = self.plx_inputs.get("conf_patches", tuple())
         cli_conf_patches = _get_cli_arg("-c", action="append") or tuple()
-        return plx_conf_patches + cli_conf_patches
+        return tuple(plx_conf_patches) + tuple(cli_conf_patches)
 
     @property
     def plx_inputs(self):

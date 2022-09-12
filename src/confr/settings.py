@@ -7,7 +7,7 @@ PLX_DOT_REPLACEMENT = os.environ.get("PLX_DOT_REPLACEMENT", "___")
 IN_POLYAXON = int(os.environ.get("IN_POLYAXON", 0))
 
 
-PRIMITIVE_TYPES = [int, float, str, list]
+PRIMITIVE_TYPES = [int, float, str, list, bool, type(None)]
 STR_TO_TYPE = {
     "int": int,
     "float": float,
