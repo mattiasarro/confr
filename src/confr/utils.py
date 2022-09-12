@@ -77,3 +77,17 @@ def interpolate_key(k, conf):
             assert type(interpolated) == str
             k = k.replace(outer, interpolated)
     return k
+
+
+def recursive_merge(src, dst):
+    for k, v in src.items():
+        if type(v) == dict:
+            if k in dst:
+                if type(src[k]) == dict and type(dst[k]) == dict:
+                    recursive_merge(src[k], dst[k])
+                else:
+                    dst[k] = v # overwrite, shouldn't happen usually
+            else:
+                dst[k] = v # set in dst for first time
+        else:
+            dst[k] = v # primitive, OK to blindly overwrite

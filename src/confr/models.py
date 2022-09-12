@@ -2,7 +2,7 @@ import os
 import aiocontextvars
 import argparse
 
-from confr.utils import import_python_object, read_yaml, flattened_items
+from confr.utils import import_python_object, read_yaml, flattened_items, recursive_merge
 from confr import settings
 
 
@@ -379,11 +379,9 @@ class Conf:
         active_conf = {}
         active_conf.update(self.c_original)
         if include_singletons:
-            # TODO recursive merge
-            active_conf.update(self.c_singletons)
+            recursive_merge(self.c_singletons, active_conf)
         for overrides_dict in self.overrides_dicts.get():
-            # TODO recursive merge
-            active_conf.update(overrides_dict)
+            recursive_merge(overrides_dict, active_conf)
         return active_conf
 
     def validate_types(self):
