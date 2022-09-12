@@ -1,7 +1,7 @@
 import inspect
 
 from confr import settings
-from confr.utils import write_yaml, strip_keys
+from confr.utils import write_yaml, strip_keys, with_keys
 from confr.models import Conf, ModifiedConf, _plx_inputs, _get_cli_arg
 from collections import namedtuple
 
@@ -117,7 +117,7 @@ def write_conf(fp, except_keys=[]):
 def to_dict(*limit_keys):
     ret = global_conf.to_dict()
     if limit_keys:
-        return {k: ret[k] for k in limit_keys}
+        return with_keys(ret, limit_keys)
     else:
         return ret
 

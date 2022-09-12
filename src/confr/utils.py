@@ -35,12 +35,24 @@ def strip_keys(conf_dict, except_keys=[], key_prefix=None):
     ret = {}
     for k, v in conf_dict.items():
         k_with_prefix = f"{key_prefix}.{k}" if key_prefix else k
-        print(k_with_prefix, except_keys)
         if k_with_prefix not in except_keys:
             if type(v) == dict:
                 v = strip_keys(v, except_keys=except_keys, key_prefix=k_with_prefix)
             ret[k] = v
 
+    return ret
+
+
+def with_keys(d, limit_keys, prefix=None):
+    ret = {}
+    for k, v in d.items():
+        k_with_prefix = f"{prefix}.{k}" if prefix else k
+        if k_with_prefix in limit_keys:
+            ret[k] = v
+        if type(v) == dict:
+            v = with_keys(v, limit_keys, prefix=k_with_prefix)
+            if v:
+                ret[k] = v
     return ret
 
 
