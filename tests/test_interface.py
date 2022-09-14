@@ -4,6 +4,7 @@ from copy import deepcopy
 from tempfile import NamedTemporaryFile, TemporaryDirectory
 
 import confr
+from confr import settings
 from confr.utils import read_yaml, write_yaml
 
 
@@ -288,6 +289,55 @@ def test_init_deep_merge():
         },
         "unknown": {"key": "val"},
     }, d
+
+
+def test_init_conf_patches():
+    conf_base = {
+        "k1": "v1",
+        "k2": {
+            "k3": "v3",
+            "k4": {
+                "k5": "v5",
+                "k6": "v6",
+                "k7": {
+                    "k8": "v8",
+                },
+            },
+            "k9": "v9",
+        },
+    }
+    cp1 = {
+        "k2": {
+            "k3": "v3_changed",
+            "k4": {
+                "k6": "v6_changed",
+                "k7": "v7",
+            },
+        },
+    }
+    cp2 = {"k2.k4.k6": "v6_changed2", "unknown": {"key": "val"}}
+
+    with TemporaryDirectory() as conf_dir:
+        write_yaml(os.path.join(conf_dir, f"{settings.BASE_CONF}.yaml"), conf_base)
+        write_yaml(os.path.join(conf_dir, "cp1.yaml"), cp1)
+        write_yaml(os.path.join(conf_dir, "cp2.yaml"), cp2)
+
+        confr.init(conf_dir=conf_dir, conf_patches=("cp1", "cp2"), cli_overrides=False)
+
+        d = confr.to_dict()
+        assert d == {
+            "k1": "v1",
+            "k2": {
+                "k3": "v3_changed",
+                "k4": {
+                    "k5": "v5",
+                    "k6": "v6_changed2",
+                    "k7": "v7",
+                },
+                "k9": "v9",
+            },
+            "unknown": {"key": "val"},
+        }, d
 
 
 def test_init_override():

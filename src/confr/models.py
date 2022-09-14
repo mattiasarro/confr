@@ -201,6 +201,8 @@ class Conf:
                 conf_dicts.extend(conf)
             else:
                 raise Exception(f"Unknown conf type of {type(conf)}.")
+            assert conf_files is None, "Can't specify conf_files when using init(conf={...})."
+            assert conf_patches == (), "Can't specify conf_patches when using init(conf={...})."
         elif conf_files:
             """Loads conf from conf files."""
             fps = [conf_files] if type(conf_files) == str else conf_files
