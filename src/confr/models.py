@@ -1,4 +1,5 @@
 import os
+import json
 import aiocontextvars
 import argparse
 
@@ -26,13 +27,12 @@ def _get(conf, k):
 def _set(conf, k, v, strict=False, merge_mode="deep_merge"):
     assert merge_mode in ["deep_merge", "override"]
 
+    former_val = None
     if _in(conf, k):
         if _get(conf, k) != v:
-            msg = f"override {k} = {v} (formerly {_get(conf, k)})"
+            former_val = _get(conf, k)
             if strict:
-                raise Exception("can't " + msg)
-            else:
-                print("    " + msg)
+                raise Exception(f"Can't override {k} (formerly {former_val}).")
 
     parts = k.split(".")
     if len(parts) > 1:
@@ -46,6 +46,12 @@ def _set(conf, k, v, strict=False, merge_mode="deep_merge"):
         _deep_merge(conf, k, v)
     else:
         conf[k] = v
+
+    if former_val:
+        if type (v) == dict:
+            print(f"Override {k} = " + json.dumps(v, indent=4))
+        else:
+            print(f"Override {k} = {v}")
 
     return v
 
