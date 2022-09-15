@@ -56,6 +56,16 @@ def get_model2(model=confr.value("encoder")):
     return model
 
 
+@confr.bind(subkeys="k1.k2")
+def get_model3(encoder=confr.value):
+    return encoder
+
+
+@confr.bind
+def get_model4(model=confr.value("k1.k2.encoder")):
+    return model
+
+
 @confr.bind
 def get_sth(sth=confr.value):
     return sth
@@ -162,9 +172,39 @@ def test_singleton():
     confr.init(conf=conf, cli_overrides=False)
 
     my_model1 = get_model1()
-    my_model2 = get_model1()
+    my_model2 = get_model2()
     assert my_model1 == my_model2
     assert my_model1.num == my_model2.num == 4
+
+
+def test_singleton_nested():
+    # This is/was a known failure mode which caused to_dict() to return singletons
+    # instead of original string representations.
+
+    conf = {
+        "parent_k1": "parent_v1",
+        "k1": {
+            "k2": {
+                "encoder": "@confr.test.imports.get_encoder()",
+                "encoder/num": 4,
+            },
+        },
+        "num": 3,
+        "another_model": "@confr.test.imports.get_encoder()",
+    }
+    confr.init(conf=conf, cli_overrides=False)
+
+    confr.get("k1.k2.encoder")
+    confr.get("another_model")
+
+    my_model3 = get_model3()
+    my_model4 = get_model4()
+    assert my_model3 == my_model4
+    assert my_model3.num == my_model4.num == 4
+
+    d = confr.to_dict()
+    assert d["k1"]["k2"]["encoder"] == "@confr.test.imports.get_encoder()"
+    assert d["another_model"] == "@confr.test.imports.get_encoder()"
 
 
 def test_interpolation():
