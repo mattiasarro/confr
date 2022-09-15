@@ -122,6 +122,10 @@ def to_dict(*limit_keys):
         return ret
 
 
+def get_global_conf():
+    return global_conf
+
+
 def types():
     return global_conf.types
 

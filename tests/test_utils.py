@@ -1,5 +1,6 @@
 from copy import deepcopy
 from confr.utils import recursive_merge
+from confr.test.imports import MyClass
 
 
 def test_recursive_merge():
@@ -51,3 +52,33 @@ def test_recursive_merge():
         },
 
     }, d1_dst
+
+
+def test_recursive_merge_inputs_unchanged():
+    active_conf = {}
+    c_original = {
+        "parent_k1": "parent_v1",
+        "k1": {
+            "k2": {
+                "encoder": "@confr.test.imports.get_encoder()",
+                "encoder/num": 4,
+            },
+        },
+        "num": 3,
+        "another_model": "@confr.test.imports.get_encoder()",
+    }
+    c_singletons = {"k1": {"k2": {"encoder": MyClass(num=10)}}}
+    c_singletons2 = {"k1": {"k2": {"encoder": MyClass(num=20)}}}
+
+    active_conf.update(deepcopy(c_original))
+    recursive_merge(c_singletons, active_conf)
+    recursive_merge(c_singletons2, active_conf)
+
+    assert c_original["k1"]["k2"]["encoder"] == "@confr.test.imports.get_encoder()", \
+        c_original["k1"]["k2"]["encoder"]
+    assert c_singletons["k1"]["k2"]["encoder"].num == 10, \
+        c_singletons["k1"]["k2"]["encoder"].num
+    assert c_singletons2["k1"]["k2"]["encoder"].num == 20, \
+        c_singletons2["k1"]["k2"]["encoder"].num
+    assert active_conf["k1"]["k2"]["encoder"].num == 20, \
+        active_conf["k1"]["k2"]["encoder"].num

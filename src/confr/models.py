@@ -2,6 +2,7 @@ import os
 import json
 import aiocontextvars
 import argparse
+from copy import deepcopy
 
 from confr.utils import import_python_object, read_yaml, flattened_items, recursive_merge
 from confr import settings
@@ -385,7 +386,7 @@ class Conf:
     def to_dict(self, include_singletons=False):
         """This implementation does not eagerly initialize singleton configs."""
         active_conf = {}
-        active_conf.update(self.c_original)
+        active_conf.update(deepcopy(self.c_original))
         if include_singletons:
             recursive_merge(self.c_singletons, active_conf)
         for overrides_dict in self.overrides_dicts.get():
