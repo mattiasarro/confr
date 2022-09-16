@@ -164,7 +164,7 @@ def _plx_inputs():
 
 
 def _get_cli_arg(arg_name, **kwargs):
-    arg_name_sane = arg_name.replace("-", "").replace(".", settings.CLI_DOT_REPLACEMENT)
+    arg_name_sane = arg_name.replace("-", "_").replace(".", settings.CLI_DOT_REPLACEMENT)
     parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument(arg_name, dest=arg_name_sane, **kwargs)
     return getattr(parser.parse_known_args()[0], arg_name_sane)

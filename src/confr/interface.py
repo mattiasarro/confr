@@ -18,15 +18,16 @@ def set(k, v):
     return global_conf.set(k, v)
 
 
-def get_input(k, default=None):
-    cli_arg1 = _get_cli_arg(f"-{k}")
-    cli_arg2 = _get_cli_arg(f"--{k}")
+def get_input(k, alias=None, default=None, **kwargs):
+    if alias:
+        cli_arg_alias = _get_cli_arg(f"-{alias}", **kwargs)
+    cli_arg = _get_cli_arg(f"--{k}", **kwargs)
     plx_arg = _plx_inputs().get(k.replace(".", settings.PLX_DOT_REPLACEMENT))
 
-    if cli_arg1 is not None:
-        return cli_arg1
-    elif cli_arg2 is not None:
-        return cli_arg2
+    if alias is not None and cli_arg_alias is not None:
+        return cli_arg_alias
+    elif cli_arg is not None:
+        return cli_arg
     elif plx_arg is not None:
         return plx_arg
     else:
