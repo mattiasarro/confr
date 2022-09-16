@@ -70,6 +70,14 @@ def _deep_merge(conf, k, v):
             conf[k][k2] = v2
 
 
+def _deep_merge_dicts(dicts, verbose=False):
+    ret = {}
+    for d in dicts:
+        for k, v in d.items():
+            _set(ret, k, v, merge_mode="deep_merge", verbose=verbose)
+    return ret
+
+
 def _is_interpolation(conf, k):
     return _is_interpolation_val(_get(conf, k))
 
@@ -120,14 +128,6 @@ def _load_types_dicts(loaded_conf_fps, verbose=True):
         types_fp = conf_fp.replace(".yaml", "_types.yaml")
         if os.path.exists(types_fp):
             ret[k] = read_yaml(types_fp, verbose=verbose)
-    return ret
-
-
-def _deep_merge_dicts(dicts, verbose=False):
-    ret = {}
-    for d in dicts:
-        for k, v in d.items():
-            _set(ret, k, v, merge_mode="deep_merge", verbose=verbose)
     return ret
 
 
