@@ -1,5 +1,17 @@
 from copy import deepcopy
+import confr
 from confr.models import _in, _get, _set, _is_interpolation, _interpolated_key, _deep_merge_dicts
+
+
+# Mock fns
+
+
+@confr.bind
+def using_some_dict(some_dict=confr.value):
+    return some_dict
+
+
+# Tests
 
 
 def test_in_dict():
@@ -331,3 +343,13 @@ def test_deep_merge_dicts():
             "k11": "v11",
         },
     }, ret
+
+
+def test_singleton_dict():
+    conf = {
+        "some_dict": "@confr.test.imports.get_dict()",
+        "num": 3,
+    }
+    confr.init(conf=conf, cli_overrides=False)
+
+    assert confr.get("some_dict") == confr.get("some_dict") == {1: 1, 2: "@something()"}

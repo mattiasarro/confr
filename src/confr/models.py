@@ -312,6 +312,8 @@ class Conf:
         self.set(k, v)
 
     def _get_val(self, k, orig_val):
+        assert not k[0] == "."
+
         if type(orig_val) == str:
             if _is_interpolation_val(orig_val):
                 assert k is not None, "Not supported."
@@ -330,7 +332,7 @@ class Conf:
         elif type(orig_val) == list:
             # TODO handle int indexes
             return [self._get_val(None, v) for v in orig_val]
-        elif type(orig_val) == dict:
+        elif type(orig_val) == dict and "." in k: # TODO this causes test_interpolation to fail
             return {
                 k2: self._get_val(f"{k}.{k2}", v)
                 for k2, v in orig_val.items()

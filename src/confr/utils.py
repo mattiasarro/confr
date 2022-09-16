@@ -6,6 +6,7 @@ from yaml import CSafeDumper
 
 
 def import_python_object(module_path_and_var_name):
+    assert module_path_and_var_name != "", "Specified empty module."
     parts = module_path_and_var_name.split(".")
     module_name = ".".join(parts[:-1])
     func_name = parts[-1]
