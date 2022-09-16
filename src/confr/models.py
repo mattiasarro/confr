@@ -25,7 +25,7 @@ def _get(conf, k):
     return conf
 
 
-def _set(conf, k, v, strict=False, merge_mode="deep_merge"):
+def _set(conf, k, v, strict=False, merge_mode="deep_merge", verbose=True):
     assert merge_mode in ["deep_merge", "override"]
 
     former_val = None
@@ -48,7 +48,7 @@ def _set(conf, k, v, strict=False, merge_mode="deep_merge"):
     else:
         conf[k] = v
 
-    if former_val:
+    if verbose and former_val:
         if type (v) == dict:
             print(f"Override {k} = " + json.dumps(v, indent=4))
         else:
@@ -123,11 +123,11 @@ def _load_types_dicts(loaded_conf_fps, verbose=True):
     return ret
 
 
-def _deep_merge_dicts(dicts):
+def _deep_merge_dicts(dicts, verbose=False):
     ret = {}
     for d in dicts:
         for k, v in d.items():
-            _set(ret, k, v, merge_mode="deep_merge")
+            _set(ret, k, v, merge_mode="deep_merge", verbose=verbose)
     return ret
 
 
