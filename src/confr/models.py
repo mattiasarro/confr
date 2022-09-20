@@ -312,7 +312,7 @@ class Conf:
         self.set(k, v)
 
     def _get_val(self, k, orig_val):
-        assert not k[0] == "."
+        assert not (k and k[0] == ".")
 
         if type(orig_val) == str:
             if _is_interpolation_val(orig_val):
