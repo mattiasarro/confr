@@ -418,7 +418,7 @@ class Conf:
 
     def conf_patches_overrides(self):
         # Can add overrides from other systems than plx here as well.
-        plx_conf_patches = self.plx_inputs.get("conf_patches", tuple())
+        plx_conf_patches = self.plx_inputs.get("conf_patches") or tuple()
         cli_conf_patches = _get_cli_arg("-c", action="append") or tuple()
         return tuple(plx_conf_patches) + tuple(cli_conf_patches)
 
