@@ -355,7 +355,7 @@ We will now evaluate the competing systems and confr on the desired qualities ou
     \item \textbf{Consistent mapping between config keys and variables / arguments.}
         \begin{itemize}
             \item \textcolor{Maroon}{BAD}: ad hoc, OmegaConf, gin-config, Hydra. In all these systems such consistency is not encouraged, which makes it harder to read, understand and refactor.
-            \item \textcolor{OliveGreen}{GOOD}: confr. Such consistency is enforced by default, though in rare cases it is possible to bypass this (for example when you need to use an externally-provided config file).
+            \item \textcolor{YellowOrange}{OK}: confr. Such consistency is enforced by default, though in rare cases it is possible to bypass this (for example when you need to use an externally-provided config file).
         \end{itemize}
     \item \textbf{Global config values.}
         \begin{itemize}
@@ -370,8 +370,8 @@ We will now evaluate the competing systems and confr on the desired qualities ou
         \end{itemize}
     \item \textbf{Usable in a notebook as well as CLI.}
         \begin{itemize}
-            \item \textcolor{Maroon}{BAD}: ad hoc, OmegaConf, gin-config. Ad hoc systems tend to work well either for notebook-based approaches (e.g. reading a global YAML file as a config dict), or work as a sophisticated CLI script, but not both. There is no support to override options from the CLI in OmegaConf and gin-config.
-            \item \textcolor{OliveGreen}{GOOD}: Hydra, confr. Can be used in both settings.
+            \item \textcolor{Maroon}{BAD}: ad hoc, gin-config. Ad hoc systems tend to work well either for notebook-based approaches (e.g. reading a global YAML file as a config dict), or work as a sophisticated CLI script, but not both. There is no support to override options from the CLI in OmegaConf and gin-config.
+            \item \textcolor{OliveGreen}{GOOD}: OmegaConf, Hydra, confr. Can be used in both settings.
         \end{itemize}
     \item \textbf{Configurable Python references and singletons.}
         \begin{itemize}
