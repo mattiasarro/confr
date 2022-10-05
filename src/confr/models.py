@@ -303,7 +303,7 @@ class Conf:
 
     def set(self, k, v, merge_mode=None):
         merge_mode = merge_mode if merge_mode else self.merge_mode
-        _set(self.c_original, k, v, strict=self.strict, merge_mode=merge_mode)
+        _set(self.c_original, k, v, verbose=self.verbose, strict=self.strict, merge_mode=merge_mode)
 
     def __getitem__(self, k):
         return self.get(k)
