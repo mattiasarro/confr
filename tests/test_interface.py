@@ -163,10 +163,21 @@ def test_python_reference():
     assert fn_python_reference() == 123
 
 
-def test_singleton():
+def test_singleton_without_overrides():
     conf = {
-        "encoder": "@confr.test.imports.get_encoder()",
-        "encoder/num": 4,
+        "my_obj": "@confr.test.imports.MySimpleClass()",
+    }
+    confr.init(conf=conf, cli_overrides=False)
+
+    assert confr.get("my_obj").name == "MySimpleClass"
+
+
+def test_singleton_with_overrides():
+    conf = {
+        "encoder": {
+            "_callable": "@confr.test.imports.get_encoder()",
+            "num": 4,
+        },
         "num": 3,
     }
     confr.init(conf=conf, cli_overrides=False)
@@ -185,8 +196,10 @@ def test_singleton_nested():
         "parent_k1": "parent_v1",
         "k1": {
             "k2": {
-                "encoder": "@confr.test.imports.get_encoder()",
-                "encoder/num": 4,
+                "encoder": {
+                    "_callable": "@confr.test.imports.get_encoder()",
+                    "num": 4,
+                },
             },
         },
         "num": 3,
@@ -203,7 +216,10 @@ def test_singleton_nested():
     assert my_model3.num == my_model4.num == 4
 
     d = confr.to_dict()
-    assert d["k1"]["k2"]["encoder"] == "@confr.test.imports.get_encoder()"
+    assert d["k1"]["k2"]["encoder"] == {
+        "_callable": "@confr.test.imports.get_encoder()",
+        "num": 4,
+    }
     assert d["another_model"] == "@confr.test.imports.get_encoder()"
 
 
@@ -222,13 +238,17 @@ def test_interpolation():
 
 def test_interpolation_singleton():
     conf = {
-        "encoder": "@confr.test.imports.get_encoder()",
-        "encoder/num": 4,
+        "encoder": {
+            "_callable": "@confr.test.imports.get_encoder()",
+            "num": 4,
+        },
         "num": 3,
         "k1": {"k2": "${encoder}"},
         "my": {
-            "encoder": "@confr.test.imports.get_encoder()",
-            "encoder/num": 5,
+            "encoder": {
+                "_callable": "@confr.test.imports.get_encoder()",
+                "num": 5,
+            },
         },
     }
     confr.init(conf=conf, cli_overrides=False)
@@ -248,8 +268,10 @@ def test_interpolation_singleton():
 def test_modified_conf():
     conf = {
         "key1": "val1",
-        "encoder": "@confr.test.imports.get_encoder()",
-        "encoder/num": 3,
+        "encoder": {
+            "_callable": "@confr.test.imports.get_encoder()",
+            "num": 3,
+        },
     }
 
     confr.init(conf=conf, cli_overrides=False)
@@ -269,13 +291,17 @@ def test_modified_conf():
 def test_conf_context():
     conf1 = {
         "key1": "val1",
-        "encoder": "@confr.test.imports.get_encoder()",
-        "encoder/num": 3,
+        "encoder": {
+            "_callable": "@confr.test.imports.get_encoder()",
+            "num": 3,
+        },
     }
     conf2 = {
         "key1": "val2",
-        "encoder": "@confr.test.imports.get_encoder()",
-        "encoder/num": 4,
+        "encoder": {
+            "_callable": "@confr.test.imports.get_encoder()",
+            "num": 4,
+        },
     }
 
     confr.init(conf=conf1, cli_overrides=False)

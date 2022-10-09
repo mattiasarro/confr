@@ -1,6 +1,11 @@
 import confr
 
 
+class MySimpleClass:
+    def __init__(self):
+        self.name = "MySimpleClass"
+
+
 class MyClass:
     def __init__(self, num):
         self.num = num

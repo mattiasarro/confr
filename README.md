@@ -155,13 +155,15 @@ assert all_models["model1"] != all_models["model2"] # while the objects are iden
 If you would like to configure input arguments specifically for singletons, you can do the following:
 
 ```yaml
-my_model1: "@my_module.models.model1()"
-my_model1/location: "/path/to/weights.h5"
-my_model2: "@my_module.models.model2()"
-my_model2/location: "/path/to/some/other/weights.h5"
+my_model1:
+    _callable: "@my_module.models.model1()"
+    location: "/path/to/weights.h5"
+my_model2:
+    _callable: "@my_module.models.model2()"
+    location: "/path/to/some/other/weights.h5"
 ```
 
-Now `my_model1` singleton will be initialized with `location="/path/to/weights.h5"` and `my_model2` singleton will be initialized with `location="/path/to/some/other/weights.h5"`. This way they can both define an input argument called `location` and still receive a unique value at initialization time. We call `my_model1/location` as a **scoped argument**, i.e. the value of `location` is present in only the `my_model1` singleton scope.
+Now `my_model1` singleton will be initialized with `location="/path/to/weights.h5"` and `my_model2` singleton will be initialized with `location="/path/to/some/other/weights.h5"`. This way they can both define an input argument called `location` and still receive a unique value at initialization time. We call `my_model1.location` as a **scoped argument**, i.e. the value of `location` is present in only the `my_model1` singleton scope.
 
 Note that you can still use the regular, non-scoped arguments along with scoped ones. For example, both `my_model1` and `my_model2` might define `img_h=confr.value`, and this value will be the same when initializing both singletons.
 
@@ -172,11 +174,13 @@ If a config value in `_base.yaml` with the format `${singleton}`, it is consider
 **_base.yaml**
 
 ```yaml
-my_embedding_model: "@my_module.models.embedding_model()"
-my_embedding_model/location: "/path/to/embedding_model/weights.h5"
-classifier_model: "@my_module.models.classifier_model()"
-classifier_model/location: "/path/to/embedding_model/weights.h5"
-classifier_model/embedding_model: "${my_embedding_model}"
+my_embedding_model:
+    _callable: "@my_module.models.embedding_model()"
+    location: "/path/to/embedding_model/weights.h5"
+classifier_model:
+    _callable: "@my_module.models.classifier_model()"
+    location: "/path/to/embedding_model/weights.h5"
+    embedding_model: "${my_embedding_model}"
 ```
 
 Here we have said that, when we initialize the `classifier_model` singleton, the value of its keyword argument `embedding_model` will be the value of the `my_embedding_model` singleton.
@@ -184,13 +188,15 @@ Here we have said that, when we initialize the `classifier_model` singleton, the
 This is useful if you have more than one embedding model singletons in one config file. If you have just one embedding model in your config file, you could instead write the above as:
 
 ```yaml
-embedding_model: "@my_module.models.embedding_model()"
-embedding_model/location: "/path/to/embedding_model/weights.h5"
-classifier_model: "@my_module.models.classifier_model()"
-classifier_model/location: "/path/to/embedding_model/weights.h5"
+embedding_model:
+    _callable: "@my_module.models.embedding_model()"
+    location: "/path/to/embedding_model/weights.h5"
+classifier_model:
+    _callable: "@my_module.models.classifier_model()"
+    location: "/path/to/embedding_model/weights.h5"
 ```
 
-Notice that we've changed the name of our embedding model singleton from `my_embedding_model` to `embedding_model`, which coincides with the `my_module.models.classifier_model` argument `embedding_model`. Therefore we can omit the line `classifier_model/embedding_model: "${embedding_model}"`, because this is the default behaviour anyway.
+Notice that we've changed the name of our embedding model singleton from `my_embedding_model` to `embedding_model`, which coincides with the `my_module.models.classifier_model` argument `embedding_model`. Therefore we can omit the line `classifier_model.embedding_model: "${embedding_model}"`, because this is the default behaviour anyway.
 
 
 ## confr.modified_conf and overrides

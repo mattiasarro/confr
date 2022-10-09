@@ -312,26 +312,31 @@ class Conf:
         self.set(k, v)
 
     def _get_val(self, k, orig_val):
-        assert not (k and k[0] == ".")
+        if k:
+            assert k[0] != "."
+            assert "/" not in k, "Slashes no longer allowed in keys."
 
         if type(orig_val) == str:
             if _is_interpolation_val(orig_val):
                 assert k is not None, "Not supported."
                 return self.get(_interpolated_key(k, orig_val))
-            elif k is not None and orig_val.startswith("@"):
-                if _in(self.c_singletons, k):
-                    return _get(self.c_singletons, k)
+            elif orig_val.startswith("@"):
+                if k is None:
+                    # _get_val is called for a list element, therefore we can't memoize it
+                    return self._get_python_ref(None, orig_val)
                 else:
-                    # memoize the result
-                    return _set(self.c_singletons, k, self._get_python_object(k, orig_val))
-            elif k is None and orig_val.startswith("@"):
-                # _get_val is called for a list element, therefore we can't memoize it
-                return self._get_python_object(None, orig_val)
+                    if _in(self.c_singletons, k):
+                        return _get(self.c_singletons, k)
+                    else:
+                        # memoize the result
+                        return _set(self.c_singletons, k, self._get_python_ref(orig_val))
             else:
                 return orig_val
         elif type(orig_val) == list:
             # TODO handle int indexes
             return [self._get_val(None, v) for v in orig_val]
+        elif type(orig_val) == dict and "_callable" in orig_val:
+            return _set(self.c_singletons, k, self._get_python_ref_with_overrides(k, orig_val))
         elif type(orig_val) == dict and "." in k: # TODO this causes test_interpolation to fail
             return {
                 k2: self._get_val(f"{k}.{k2}", v)
@@ -340,41 +345,19 @@ class Conf:
         else:
             return orig_val
 
-    def _get_python_object(self, k, orig_val):
-        if orig_val.startswith("@") and orig_val.endswith("()"):
-            return self._init_python_object(k, orig_val[1:-2])
-        elif orig_val.startswith("@"):
-            return import_python_object(orig_val[1:])
+    def _get_python_ref(self, orig_val):
+        if orig_val.endswith("()"):
+            return import_python_object(orig_val[1:-2])() # import and call without overrides
         else:
-            raise Exception("_get_python_object orig_val should start with '@'")
+            return import_python_object(orig_val[1:]) # just import
 
-    def _init_python_object(self, k, module_path_and_var_name):
+    def _get_python_ref_with_overrides(self, k, orig_val):
         overrides = {}
-        if k is not None:
-            conf = self.to_dict(include_singletons=True)
-            if "." in k:
-                parts = k.split(".")
-                conf = _get(conf, ".".join(parts[:-1])) # get parent node of obj in conf
-                k = parts[-1] # look for key in that subtree
+        for k2, v in orig_val.items():
+            if k2 != "_callable":
+                overrides[k2] = self._get_val(f"{k}.{k2}", v)
 
-            prefix = k + "/"
-            for conf_k, conf_v in conf.items():
-                if conf_k.startswith(prefix):
-                    if type(conf_v) == str and conf_v.startswith("@"):
-                        if conf_v.endswith("()"):
-                            raise Exception((
-                                'Tried to pass a config like `singleton_name/attribute_name: "@MyClass()"`, '
-                                'which is not supported. Instead define a singleton `my_obj: "@MyClass()"` and '
-                                'refer to it as `singleton_name/attribute_name = "${my_obj}"`'
-                            ))
-                        else:
-                            conf_v = self._get_python_object(None, conf_v)
-
-                    override_key = conf_k[len(prefix):]
-                    overrides[override_key] = conf_v
-
-        func = import_python_object(module_path_and_var_name)
-        return func(**overrides)
+        return import_python_object(orig_val["_callable"][1:-2])(**overrides)
 
     def add_overrides(self, overrides, verbose):
         for arg_name, arg_val in overrides.items():
