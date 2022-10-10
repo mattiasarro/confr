@@ -345,6 +345,55 @@ def test_deep_merge_dicts():
     }, ret
 
 
+def test_deep_merge_dicts_with_null_overrides():
+    d1 = {
+        "k1": None,
+    }
+    d2 = {
+        "k1": "v1",
+    }
+    ret = _deep_merge_dicts([d1, d2])
+    assert ret == {
+        "k1": "v1",
+    }, ret
+
+    d1 = {
+        "k1": None,
+    }
+    d2 = {
+        "k1": {"k2": "v2"},
+    }
+    ret = _deep_merge_dicts([d1, d2])
+    assert ret == {
+        "k1": {"k2": "v2"},
+    }, ret
+
+
+def test_deep_merge_dicts_with_missing_subkeys():
+    d1 = {
+        "k1": {
+            "k2": "v2",
+        },
+    }
+    d2 = {
+        "k1": {
+            "k2": "v2",
+            "k3": {
+                "k4": "v4",
+            }
+        },
+    }
+    ret = _deep_merge_dicts([d1, d2])
+    assert ret == {
+        "k1": {
+            "k2": "v2",
+            "k3": {
+                "k4": "v4",
+            }
+        },
+    }, ret
+
+
 def test_singleton_dict():
     conf = {
         "some_dict": "@confr.test.imports.get_dict()",

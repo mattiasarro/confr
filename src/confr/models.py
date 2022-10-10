@@ -58,10 +58,11 @@ def _set(conf, k, v, strict=False, merge_mode="deep_merge", verbose=True):
 
 
 def _deep_merge(conf, k, v):
-    t1 = type(conf[k])
-    t2 = type(v)
-    assert t1 == t2 == dict, \
-        f"Tried to merge two incompatible types ({t1}, {t2}) at {k} with values {conf[k]} and {v}."
+    assert type(v) == dict, \
+        f"Expected _deep_merge v to be dict, got {type(v)}."
+
+    if k not in conf or conf[k] is None:
+        conf[k] = {}
 
     for k2, v2 in v.items():
         if type(v2) == dict:
