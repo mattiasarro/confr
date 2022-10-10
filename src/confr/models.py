@@ -43,6 +43,10 @@ def _set(conf, k, v, strict=False, merge_mode="deep_merge", verbose=True):
             conf = conf[part]
         k = parts[-1]
 
+    if k.endswith("="):
+        merge_mode = "override"
+        k = k[:-1]
+
     if merge_mode == "deep_merge" and type(v) == dict and k in conf:
         _deep_merge(conf, k, v)
     else:
@@ -65,10 +69,10 @@ def _deep_merge(conf, k, v):
         conf[k] = {}
 
     for k2, v2 in v.items():
-        if type(v2) == dict and v2.get("_deep_merge", True):
+        if type(v2) == dict and not k2.endswith("="):
             _deep_merge(conf[k], k2, v2)
         else:
-            conf[k][k2] = v2
+            conf[k][k2.replace("=", "")] = v2
 
 
 def _deep_merge_dicts(dicts, verbose=False):

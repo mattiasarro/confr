@@ -471,6 +471,21 @@ def test_deep_merge_special_key():
         },
     }, d
 
+    # always override scalar
+    conf1 = {
+        "k1": {
+            "k2": "v2",
+        },
+    }
+    conf2 = {
+        "k1": "v1",
+    }
+    confr.init(conf=[conf1, conf2], cli_overrides=False)
+    d = confr.to_dict()
+    assert d == {
+        "k1": "v1",
+    }, d
+
     # no deep merge, level 1
     conf1 = {
         "k1": {
@@ -478,8 +493,7 @@ def test_deep_merge_special_key():
         },
     }
     conf2 = {
-        "k1": {
-            "_deep_merge": False,
+        "k1=": {
             "k3": {
                 "k4": "v4",
             }
@@ -489,7 +503,6 @@ def test_deep_merge_special_key():
     d = confr.to_dict()
     assert d == {
         "k1": {
-            "_deep_merge": False,
             "k3": {
                 "k4": "v4",
             }
@@ -507,8 +520,7 @@ def test_deep_merge_special_key():
     }
     conf2 = {
         "k1": {
-            "k3": {
-                "_deep_merge": False,
+            "k3=": {
                 "k5": "v5",
             }
         },
@@ -519,7 +531,6 @@ def test_deep_merge_special_key():
         "k1": {
             "k2": "v2",
             "k3": {
-                "_deep_merge": False,
                 "k5": "v5",
             }
         },
