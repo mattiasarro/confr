@@ -65,7 +65,7 @@ def _deep_merge(conf, k, v):
         conf[k] = {}
 
     for k2, v2 in v.items():
-        if type(v2) == dict:
+        if type(v2) == dict and v2.get("_deep_merge", True):
             _deep_merge(conf[k], k2, v2)
         else:
             conf[k][k2] = v2

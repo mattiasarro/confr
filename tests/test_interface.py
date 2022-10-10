@@ -446,6 +446,86 @@ def test_init_override():
     }, d
 
 
+def test_deep_merge_special_key():
+    # deep merge
+    conf1 = {
+        "k1": {
+            "k2": "v2",
+        },
+    }
+    conf2 = {
+        "k1": {
+            "k3": {
+                "k4": "v4",
+            }
+        },
+    }
+    confr.init(conf=[conf1, conf2], cli_overrides=False)
+    d = confr.to_dict()
+    assert d == {
+        "k1": {
+            "k2": "v2",
+            "k3": {
+                "k4": "v4",
+            }
+        },
+    }, d
+
+    # no deep merge, level 1
+    conf1 = {
+        "k1": {
+            "k2": "v2",
+        },
+    }
+    conf2 = {
+        "k1": {
+            "_deep_merge": False,
+            "k3": {
+                "k4": "v4",
+            }
+        },
+    }
+    confr.init(conf=[conf1, conf2], cli_overrides=False)
+    d = confr.to_dict()
+    assert d == {
+        "k1": {
+            "_deep_merge": False,
+            "k3": {
+                "k4": "v4",
+            }
+        },
+    }, d
+
+    # no deep merge, level 2
+    conf1 = {
+        "k1": {
+            "k2": "v2",
+            "k3": {
+                "k4": "v4",
+            }
+        },
+    }
+    conf2 = {
+        "k1": {
+            "k3": {
+                "_deep_merge": False,
+                "k5": "v5",
+            }
+        },
+    }
+    confr.init(conf=[conf1, conf2], cli_overrides=False)
+    d = confr.to_dict()
+    assert d == {
+        "k1": {
+            "k2": "v2",
+            "k3": {
+                "_deep_merge": False,
+                "k5": "v5",
+            }
+        },
+    }, d
+
+
 def test_conf_from_files():
     with NamedTemporaryFile() as f:
         f.write("key1: val1".encode("utf-8"))
