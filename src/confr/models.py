@@ -293,7 +293,7 @@ class Conf:
                 return self._get_val(k, overrides_dict[k])
 
         if _in(self.c_singletons, k):
-            return self._get_val(k, _get(self.c_singletons, k))
+            return _get(self.c_singletons, k)
         elif _in(self.c_original, k):
             return self._get_val(k, _get(self.c_original, k))
         else:
@@ -315,7 +315,7 @@ class Conf:
     def _get_val(self, k, orig_val):
         if k:
             assert k[0] != "."
-            assert "/" not in k, "Slashes no longer allowed in keys."
+            assert "/" not in k, f"Slashes no longer allowed in keys ({k})."
 
         if type(orig_val) == str:
             if _is_interpolation_val(orig_val):
