@@ -2,7 +2,7 @@ import inspect
 
 from confr import settings
 from confr.utils import write_yaml, strip_keys, with_keys, interpolate_key
-from confr.models import Conf, ModifiedConf, _plx_inputs, _get_cli_arg
+from confr.models import Conf, ModifiedConf, _plx_inputs, _get_cli_arg, _get
 from collections import namedtuple
 
 
@@ -129,6 +129,10 @@ def get_global_conf():
 
 def types():
     return global_conf.types
+
+
+def get_type(k):
+    return _get(global_conf.types, k)
 
 
 def conf_patches():
