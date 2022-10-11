@@ -292,11 +292,16 @@ class Conf:
         return _follow_file_refs(self.c_original, conf_dir, verbose=self.verbose)
 
     def get(self, k, default=None):
+        use_singletons = True
+        if k.startswith("&"):
+            k = k[1:]
+            use_singletons = False
+
         for overrides_dict in self.overrides_dicts.get()[::-1]:
             if k in overrides_dict:
                 return self._get_val(k, overrides_dict[k])
 
-        if _in(self.c_singletons, k):
+        if use_singletons and _in(self.c_singletons, k):
             return _get(self.c_singletons, k)
         elif _in(self.c_original, k):
             return self._get_val(k, _get(self.c_original, k))

@@ -182,8 +182,12 @@ def test_singleton_with_overrides():
     }
     confr.init(conf=conf, cli_overrides=False)
 
+    assert confr.get("&encoder.num") == 4
+
     my_model1 = get_model1()
     my_model2 = get_model2()
+
+    assert confr.get("&encoder.num") == 4
     assert my_model1 == my_model2
     assert my_model1.num == my_model2.num == 4
 
