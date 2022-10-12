@@ -1,4 +1,4 @@
-from confr.settings import PLX_DOT_REPLACEMENT
+from confr.settings import PLX_DOT_REPLACEMENT, IN_POLYAXON
 
 
 def enc_input(input_name):
@@ -10,3 +10,20 @@ def enc_input(input_name):
 
 def dec_input(input_name):
     return input_name.replace(PLX_DOT_REPLACEMENT, ".")
+
+
+def inputs():
+    if IN_POLYAXON:
+        print(f"Overriding arguments from Polyaxon since IN_POLYAXON={IN_POLYAXON}.")
+        from polyaxon.client import RunClient
+
+        try:
+            run_client = RunClient()
+            run_client.refresh_data()
+        except:
+            print("Could not initialise RunClient. Polyaxon configured?")
+            return {}
+        return run_client.get_inputs()
+
+    else:
+        return {}

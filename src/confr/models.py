@@ -5,7 +5,7 @@ import argparse
 from copy import deepcopy
 
 from confr.utils import import_python_object, read_yaml, flattened_items, recursive_merge
-from confr import settings
+from confr import settings, plx
 
 
 def _in(conf, k):
@@ -149,23 +149,6 @@ def _leaves_to_primitives(d):
                 f"Expected value of {k} to be a primitive (in {settings.PRIMITIVE_TYPES}), "
                 f"but {v} is of type {type(v)}."
             )
-
-
-def _plx_inputs():
-    if settings.IN_POLYAXON:
-        print(f"Overriding arguments from Polyaxon since IN_POLYAXON={settings.IN_POLYAXON}.")
-        from polyaxon.client import RunClient
-
-        try:
-            run_client = RunClient()
-            run_client.refresh_data()
-        except:
-            print("Could not initialise RunClient. Polyaxon configured?")
-            return {}
-        return run_client.get_inputs()
-
-    else:
-        return {}
 
 
 def _get_cli_arg(arg_name, **kwargs):
@@ -418,7 +401,7 @@ class Conf:
     @property
     def plx_inputs(self):
         if self._plx_inputs is None:
-            self._plx_inputs = _plx_inputs()
+            self._plx_inputs = plx.inputs()
         return self._plx_inputs
 
 

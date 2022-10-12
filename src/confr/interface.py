@@ -1,8 +1,8 @@
 import inspect
 
-from confr import settings, plx
+from confr import plx
 from confr.utils import write_yaml, strip_keys, with_keys, interpolate_key
-from confr.models import Conf, ModifiedConf, _plx_inputs, _get_cli_arg, _get
+from confr.models import Conf, ModifiedConf, _get_cli_arg, _get
 from collections import namedtuple
 
 
@@ -22,7 +22,7 @@ def get_input(k, alias=None, default=None, **kwargs):
     if alias:
         cli_arg_alias = _get_cli_arg(f"-{alias}", **kwargs)
     cli_arg = _get_cli_arg(f"--{k}", **kwargs)
-    plx_arg = _plx_inputs().get(plx.enc_input(k))
+    plx_arg = plx.inputs().get(plx.enc_input(k))
 
     if alias is not None and cli_arg_alias is not None:
         return cli_arg_alias
