@@ -1,7 +1,7 @@
 import inspect
 
 from confr import plx
-from confr.utils import write_yaml, strip_keys, with_keys, interpolate_key
+from confr.utils import write_yaml, strip_keys, with_keys, interpolate_key, flattened_items
 from confr.models import Conf, ModifiedConf, _get_cli_arg, _get
 from collections import namedtuple
 
@@ -115,12 +115,13 @@ def write_conf(fp, except_keys=[]):
     print(f"Wrote configurations for: {list(ret.keys())}")
 
 
-def to_dict(*limit_keys):
+def to_dict(*limit_keys, flat=False):
     ret = global_conf.to_dict()
     if limit_keys:
-        return with_keys(ret, limit_keys)
-    else:
-        return ret
+        ret = with_keys(ret, limit_keys)
+    if flat:
+        ret = dict(flattened_items(ret))
+    return ret
 
 
 def get_global_conf():

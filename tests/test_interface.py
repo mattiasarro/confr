@@ -722,4 +722,26 @@ def test_write_conf_with_interpolations():
         assert read_yaml(conf_fn) == conf_orig
 
 
+def test_to_dict():
+    conf = {
+        "k1": {
+            "k2": {
+                "k3": "v3",
+                "k4": "v4",
+            },
+            "k5": "v5",
+        },
+        "k6": "v6",
+    }
+    confr.init(conf=conf)
+
+    assert confr.to_dict() == conf
+    assert confr.to_dict(flat=True) == {
+        "k1.k2.k3": "v3",
+        "k1.k2.k4": "v4",
+        "k1.k5": "v5",
+        "k6": "v6",
+    }
+
+
 # %%
