@@ -2,7 +2,7 @@ import sys
 import importlib
 import re
 import yaml
-from yaml import CSafeDumper
+from yaml import SafeDumper
 
 
 def import_python_object(module_path_and_var_name):
@@ -26,10 +26,10 @@ def write_yaml(fn, obj, verbose=True, do_print=False):
     if verbose:
         print(f"Writing {fn}.")
     with open(fn, 'w') as f:
-        yaml.dump(obj, f, allow_unicode=True, sort_keys=False, Dumper=CSafeDumper)
+        yaml.dump(obj, f, allow_unicode=True, sort_keys=False, Dumper=SafeDumper)
         if do_print:
             print("---")
-            yaml.dump(obj, sys.stdout, allow_unicode=True, sort_keys=False, Dumper=CSafeDumper)
+            yaml.dump(obj, sys.stdout, allow_unicode=True, sort_keys=False, Dumper=SafeDumper)
             print("---")
 
 
