@@ -41,6 +41,7 @@ def bind(*args, subkeys=None):
                 overrides = _get_call_overrides(orig, args, kwargs, subkeys)
                 return orig(*args, **kwargs, **overrides)
 
+            confr_wrapped_function.__name__ = orig.__name__
             return confr_wrapped_function
         else:
             class ConfrWrappedClass(orig):
@@ -48,6 +49,7 @@ def bind(*args, subkeys=None):
                     overrides = _get_call_overrides(orig, args, kwargs, subkeys)
                     super().__init__(*args, **kwargs, **overrides)
 
+            ConfrWrappedClass.__name__ = orig.__name__
             return ConfrWrappedClass
 
     if len(args): # used as confr.bind; args = (orig), subkeys = None
