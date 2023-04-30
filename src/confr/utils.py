@@ -4,6 +4,8 @@ import re
 import yaml
 from yaml import SafeDumper
 
+from confr import settings
+
 
 def import_python_object(module_path_and_var_name):
     assert module_path_and_var_name != "", "Specified empty module."
@@ -92,3 +94,11 @@ def recursive_merge(src, dst):
                 dst[k] = v # set in dst for first time
         else:
             dst[k] = v # primitive, OK to blindly overwrite
+
+
+def escape(s):
+    return s.replace(".", settings.DOT_REPLACEMENT)
+
+
+def unescape(s):
+    return s.replace(settings.DOT_REPLACEMENT, ".")

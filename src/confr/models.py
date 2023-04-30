@@ -4,7 +4,7 @@ import aiocontextvars
 import argparse
 from copy import deepcopy
 
-from confr.utils import import_python_object, read_yaml, flattened_items, recursive_merge
+from confr.utils import import_python_object, read_yaml, flattened_items, recursive_merge, escape, unescape
 from confr import settings, plx
 
 
@@ -152,7 +152,7 @@ def _leaves_to_primitives(d):
 
 
 def _get_cli_arg(arg_name, **kwargs):
-    arg_name_sane = arg_name.replace("-", "_").replace(".", settings.CLI_DOT_REPLACEMENT)
+    arg_name_sane = arg_name.replace("-", "_").replace(".", settings.DOT_REPLACEMENT)
     parser = argparse.ArgumentParser(allow_abbrev=False)
     parser.add_argument(arg_name, dest=arg_name_sane, **kwargs)
     return getattr(parser.parse_known_args()[0], arg_name_sane)
@@ -171,6 +171,8 @@ class Conf:
         conf_patches=(),
         verbose=True,
         strict=False,
+        env_overrides=True,
+        env_overrides_prefix="CONFR_",
         cli_overrides=True,
         cli_overrides_prefix="--",
         validate_types=True,
@@ -231,6 +233,8 @@ class Conf:
             # since these overrides are permanent (and self.add_overrides) is more limited.
             self._init_conf_dict(overrides)
 
+        if env_overrides:
+            self.override_from_env(env_overrides_prefix)
         if cli_overrides:
             self.override_from_cli(cli_overrides_prefix, file_refs_only=True)
         loaded_conf_fps = self.follow_file_refs(conf_dir)
@@ -251,10 +255,16 @@ class Conf:
         for k, v in conf_dict.items():
             self.set(k, v)
 
-    def override_from_cli(self, prefix, file_refs_only=False):
-        escape = lambda s: s.replace(".", settings.CLI_DOT_REPLACEMENT)
-        unescape = lambda s: s.replace(settings.CLI_DOT_REPLACEMENT, ".")
+    def override_from_env(self, env_overrides_prefix):
+        for k, v in os.environ.items():
+            if (
+                k.startswith(env_overrides_prefix) and
+                k not in ["CONFR_BASE_CONF", "CONFR_CONF_DIR"]
+            ):
+                k = unescape(k[len(env_overrides_prefix):])
+                self.set(k, v)
 
+    def override_from_cli(self, prefix, file_refs_only=False):
         parser = argparse.ArgumentParser(allow_abbrev=False, description='Override confr values.')
 
         for k, v in flattened_items(self.to_dict()):

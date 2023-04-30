@@ -2,7 +2,7 @@ import os
 
 CONF_DIR = os.environ.get("CONFR_CONF_DIR", "config")
 BASE_CONF = os.environ.get("CONFR_BASE_CONF", "_base")
-CLI_DOT_REPLACEMENT = os.environ.get("CLI_DOT_REPLACEMENT", "__")
+DOT_REPLACEMENT = os.environ.get("DOT_REPLACEMENT", "__")
 PLX_DOT_REPLACEMENT = os.environ.get("PLX_DOT_REPLACEMENT", "__")
 IN_POLYAXON = int(os.environ.get("IN_POLYAXON", 0))
 
